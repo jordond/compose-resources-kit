@@ -11,6 +11,8 @@ build/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/misc.xml
+.idea/gradle.xml
 *.iws
 *.iml
 *.ipr
@@ -18,6 +20,7 @@ build/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+*.hprof
 
 ### Eclipse ###
 .apt_generated
