@@ -12,6 +12,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.layout.selected
 import dev.jordond.composeresourceskit.service.ComposeDetector
 import dev.jordond.composeresourceskit.service.ComposeResourcesService
 import dev.jordond.composeresourceskit.service.PluginLogger
@@ -33,6 +34,7 @@ class ComposeResourcesConfigurable(
   private var enabledCheckBox: JBCheckBox? = null
   private var debounceSpinner: JSpinner? = null
   private var notificationsCheckBox: JBCheckBox? = null
+  private var loggingCheckBox: JBCheckBox? = null
   private var pathsListModel: DefaultListModel<String>? = null
   private var logTextArea: JBTextArea? = null
   private var logListener: (() -> Unit)? = null
@@ -123,6 +125,11 @@ class ComposeResourcesConfigurable(
             .applyToComponent { isSelected = settings.showNotifications }
             .component
         }
+        row {
+          loggingCheckBox = checkBox("Enable logging")
+            .applyToComponent { isSelected = settings.loggingEnabled }
+            .component
+        }
       }
       group("Custom Resource Directories") {
         row {
@@ -137,7 +144,17 @@ class ComposeResourcesConfigurable(
             .align(Align.FILL)
         }
       }
+      group("Info") {
+        row {
+          comment(
+            "Watches for changes in composeResources directories (and any custom directories above) " +
+              "then automatically runs the Gradle generateResourceAccessors task for the affected module. " +
+              "The plugin only activates for projects using the org.jetbrains.compose Gradle plugin.",
+          )
+        }
+      }
       group("Diagnostics") {
+        visibleIf(loggingCheckBox!!.selected)
         row {
           comment(
             "Live log of plugin activity. Edit a file in your composeResources directory " +
@@ -150,15 +167,6 @@ class ComposeResourcesConfigurable(
         row {
           cell(refreshDetectionButton)
           cell(clearLogsButton)
-        }
-      }
-      group("Info") {
-        row {
-          comment(
-            "Watches for changes in composeResources directories (and any custom directories above) " +
-              "then automatically runs the Gradle generateResourceAccessors task for the affected module. " +
-              "The plugin only activates for projects using the org.jetbrains.compose Gradle plugin.",
-          )
         }
       }
     }
@@ -189,6 +197,7 @@ class ComposeResourcesConfigurable(
     if (enabledCheckBox?.isSelected != settings.enabled) return true
     if ((debounceSpinner?.value as? Int) != settings.debounceMs) return true
     if (notificationsCheckBox?.isSelected != settings.showNotifications) return true
+    if (loggingCheckBox?.isSelected != settings.loggingEnabled) return true
 
     val currentPaths = pathsListModel?.let { model ->
       (0 until model.size()).map { model.getElementAt(it) }
@@ -209,6 +218,7 @@ class ComposeResourcesConfigurable(
         enabled = enabledCheckBox?.isSelected ?: true,
         debounceMs = (debounceSpinner?.value as? Int) ?: 2000,
         showNotifications = notificationsCheckBox?.isSelected ?: true,
+        loggingEnabled = loggingCheckBox?.isSelected ?: false,
         additionalResourcePaths = paths,
       ),
     )
@@ -219,6 +229,7 @@ class ComposeResourcesConfigurable(
     enabledCheckBox?.isSelected = settings.enabled
     debounceSpinner?.value = settings.debounceMs
     notificationsCheckBox?.isSelected = settings.showNotifications
+    loggingCheckBox?.isSelected = settings.loggingEnabled
 
     pathsListModel?.let { model ->
       model.clear()
@@ -231,6 +242,7 @@ class ComposeResourcesConfigurable(
     enabledCheckBox = null
     debounceSpinner = null
     notificationsCheckBox = null
+    loggingCheckBox = null
     pathsListModel = null
     logTextArea = null
     logListener = null

@@ -24,9 +24,6 @@
             provider="dev.jordond.composeresourceskit.settings.ComposeResourcesConfigurableProvider"/>
 
         <projectService
-            serviceImplementation="dev.jordond.composeresourceskit.settings.ComposeResourcesSettings"/>
-
-        <projectService
             serviceImplementation="dev.jordond.composeresourceskit.service.ComposeDetector"/>
 
         <projectService

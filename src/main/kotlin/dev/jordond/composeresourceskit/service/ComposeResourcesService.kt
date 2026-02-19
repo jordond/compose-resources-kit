@@ -43,134 +43,103 @@ class ComposeResourcesService(
   var status: Status = Status.IDLE
     private set
 
-  private data class ResourceMatch(
-    val gradleModulePath: String,
-    val sourceSet: String,
-  )
-
   fun onFileChanged(filePath: String) {
     if (project.isDisposed) return
     val pluginLog = PluginLogger.getInstance(project)
 
     if (!isWatchedResourcePath(filePath)) {
-      pluginLog.info("  Skipped (not a watched resource path): $filePath")
       return
     }
 
-    val match = resolveResourceMatch(filePath)
-    if (match == null) {
+    val modulePath = resolveModulePath(filePath)
+    if (modulePath == null) {
       pluginLog.warn("  Could not resolve Gradle module for: $filePath")
       return
     }
 
     pluginLog.info(
-      "  Matched module=${match.gradleModulePath} sourceSet=${match.sourceSet} — queuing task (debounce ${
+      "  Matched module=$modulePath — queuing task (debounce ${
         ComposeResourcesSettings.getInstance(
           project,
         ).debounceMs
       }ms)",
     )
-    val updateKey = "${match.gradleModulePath}:${match.sourceSet}"
     updateQueue.queue(
-      object : Update("compose-resources-$updateKey") {
+      object : Update("compose-resources-$modulePath") {
         override fun run() {
-          runGenerateTask(match)
+          runGenerateTask(modulePath)
         }
       },
     )
   }
 
   private fun isWatchedResourcePath(path: String): Boolean {
+    if (path.contains("/build/")) return false
     if (path.contains("/composeResources/") || path.endsWith("/composeResources")) return true
-
     val settings = ComposeResourcesSettings.getInstance(project)
     return settings.additionalResourcePaths.any { customPath ->
       path.contains("/$customPath/") || path.endsWith("/$customPath")
     }
   }
 
-  private fun resolveResourceMatch(filePath: String): ResourceMatch? {
-    val composeResIdx = filePath.indexOf("/composeResources")
-    if (composeResIdx != -1) {
-      val pathBeforeResources = filePath.substring(0, composeResIdx)
-      val sourceSet = detectSourceSet(filePath, composeResIdx) ?: "commonMain"
-      val modulePath = resolveModulePath(pathBeforeResources) ?: return null
-      return ResourceMatch(modulePath, sourceSet)
-    }
+  private fun resolveModulePath(filePath: String): String? {
+    val pathBeforeResources: String = run {
+      val composeResIdx = filePath.indexOf("/composeResources")
+      if (composeResIdx != -1) return@run filePath.substring(0, composeResIdx)
 
-    val settings = ComposeResourcesSettings.getInstance(project)
-    for (customPath in settings.additionalResourcePaths) {
-      val pattern = "/$customPath/"
-      val idx = filePath.indexOf(pattern)
-      val endPattern = "/$customPath"
-      if (idx != -1) {
-        val pathBefore = filePath.substring(0, idx)
-        val sourceSet = detectSourceSetFromCustomPath(filePath, customPath) ?: "commonMain"
-        val modulePath = resolveModulePath(pathBefore) ?: return null
-        return ResourceMatch(modulePath, sourceSet)
-      } else if (filePath.endsWith(endPattern)) {
-        val pathBefore = filePath.substring(0, filePath.length - endPattern.length)
-        val modulePath = resolveModulePath(pathBefore) ?: return null
-        return ResourceMatch(modulePath, "commonMain")
+      val settings = ComposeResourcesSettings.getInstance(project)
+      for (customPath in settings.additionalResourcePaths) {
+        val idx = filePath.indexOf("/$customPath/")
+        if (idx != -1) return@run filePath.substring(0, idx)
+        if (filePath.endsWith("/$customPath")) return@run filePath.removeSuffix("/$customPath")
       }
+      return null
     }
 
-    return null
-  }
-
-  private fun detectSourceSet(
-    filePath: String,
-    composeResIdx: Int,
-  ): String? {
-    val srcIdx = filePath.lastIndexOf("/src/", composeResIdx)
-    if (srcIdx == -1) return null
-    val between = filePath.substring(srcIdx + 5, composeResIdx)
-    return if (!between.contains("/")) between else null
-  }
-
-  private fun detectSourceSetFromCustomPath(
-    filePath: String,
-    customPath: String,
-  ): String? {
-    val customIdx = filePath.indexOf("/$customPath")
-    if (customIdx == -1) return null
-    val srcIdx = filePath.lastIndexOf("/src/", customIdx)
-    if (srcIdx == -1) return null
-    val between = filePath.substring(srcIdx + 5, customIdx)
-    return if (!between.contains("/")) between else null
-  }
-
-  private fun resolveModulePath(pathBeforeResources: String): String? {
     val detector = ComposeDetector.getInstance(project)
 
+    data class Candidate(
+      val externalPath: String,
+      val gradlePath: String,
+    )
+
+    val candidates = mutableListOf<Candidate>()
     for (module in ModuleManager.getInstance(project).modules) {
       val externalPath = ExternalSystemApiUtil.getExternalProjectPath(module) ?: continue
-      if (pathBeforeResources.startsWith(externalPath)) {
-        if (!detector.isComposeModule(module)) continue
-
-        val gradlePath = ExternalSystemApiUtil.getExternalProjectId(module)
-        if (gradlePath != null && gradlePath != ":" && gradlePath.isNotBlank()) {
-          return gradlePath.trimEnd(':')
-        }
-        return ""
-      }
+      if (!pathBeforeResources.startsWith(externalPath)) continue
+      val gradlePath = ExternalSystemApiUtil.getExternalProjectId(module) ?: continue
+      if (!detector.isComposeModule(module)) continue
+      candidates.add(Candidate(externalPath, gradlePath))
     }
 
-    return null
+    // Among all matches, pick the one whose externalPath is longest (most specific directory),
+    // then among ties prefer the fewest Gradle path segments (the root module, not a source-set sub-module).
+    val best = candidates
+      .sortedWith(
+        compareByDescending<Candidate> { it.externalPath.length }.thenBy {
+          it.gradlePath.count { c ->
+            c == ':'
+          }
+        },
+      ).firstOrNull() ?: return null
+
+    val gradlePath = best.gradlePath
+    return when {
+      gradlePath == ":" || gradlePath.isBlank() -> ""
+      else -> gradlePath.trimEnd(':')
+    }
   }
 
-  private fun runGenerateTask(match: ResourceMatch) {
-    val moduleKey = "${match.gradleModulePath}:${match.sourceSet}"
-    if (!runningModules.add(moduleKey)) {
-      log.info("Generation already running for: $moduleKey, skipping")
+  private fun runGenerateTask(modulePath: String) {
+    if (!runningModules.add(modulePath)) {
+      log.info("Generation already running for: $modulePath, skipping")
       return
     }
 
-    val capitalizedSourceSet = match.sourceSet.replaceFirstChar { it.uppercase() }
-    val taskName = if (match.gradleModulePath.isEmpty()) {
-      "generateResourceAccessorsFor$capitalizedSourceSet"
+    val taskName = if (modulePath.isEmpty()) {
+      "generateResourceAccessorsForCommonMain"
     } else {
-      "${match.gradleModulePath}:generateResourceAccessorsFor$capitalizedSourceSet"
+      "$modulePath:generateResourceAccessorsForCommonMain"
     }
 
     val pluginLog = PluginLogger.getInstance(project)
@@ -180,7 +149,7 @@ class ComposeResourcesService(
 
     val basePath = project.basePath
     if (basePath == null) {
-      runningModules.remove(moduleKey)
+      runningModules.remove(modulePath)
       updateStatus(Status.IDLE)
       pluginLog.error("basePath is null — cannot run task")
       return
@@ -204,17 +173,16 @@ class ComposeResourcesService(
         false,
       )
 
-      runningModules.remove(moduleKey)
+      runningModules.remove(modulePath)
       updateStatus(if (runningModules.isEmpty()) Status.IDLE else Status.RUNNING)
       pluginLog.info("Gradle task dispatched successfully: $taskName")
       log.info("Gradle task dispatched: $taskName")
       val settings = ComposeResourcesSettings.getInstance(project)
       if (settings.showNotifications) {
-        val moduleLabel = match.gradleModulePath.ifEmpty { "root" }
-        notify("Resource accessors generated for $moduleLabel (${match.sourceSet})")
+        notify("Resource accessors generated for ${modulePath.ifEmpty { "root" }}")
       }
     } catch (e: Exception) {
-      runningModules.remove(moduleKey)
+      runningModules.remove(modulePath)
       updateStatus(Status.ERROR)
       log.error("Failed to run Gradle task: $taskName", e)
       pluginLog.error("Failed to run Gradle task: $taskName — ${e.message}")

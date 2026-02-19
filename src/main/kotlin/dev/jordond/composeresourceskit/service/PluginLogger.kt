@@ -3,12 +3,15 @@ package dev.jordond.composeresourceskit.service
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import dev.jordond.composeresourceskit.settings.ComposeResourcesSettings
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Service(Service.Level.PROJECT)
-class PluginLogger : Disposable {
+class PluginLogger(
+  private val project: Project,
+) : Disposable {
   data class Entry(
     val time: String,
     val level: Level,
@@ -46,6 +49,7 @@ class PluginLogger : Disposable {
     level: Entry.Level,
     message: String,
   ) {
+    if (!ComposeResourcesSettings.getInstance(project).loggingEnabled) return
     val entry = Entry(LocalTime.now().format(formatter), level, message)
     entries.add(entry)
     if (entries.size > MAX_ENTRIES) {
