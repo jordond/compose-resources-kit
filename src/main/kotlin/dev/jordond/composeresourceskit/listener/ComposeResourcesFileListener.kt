@@ -13,36 +13,34 @@ import dev.jordond.composeresourceskit.service.ComposeResourcesService
 import dev.jordond.composeresourceskit.settings.ComposeResourcesSettings
 
 class ComposeResourcesFileListener : BulkFileListener {
+  override fun after(events: MutableList<out VFileEvent>) {
+    val relevantEvents = events.filter { it.isRelevantEvent() }
+    if (relevantEvents.isEmpty()) return
 
-    override fun after(events: MutableList<out VFileEvent>) {
-        val relevantEvents = events.filter { it.isRelevantEvent() }
-        if (relevantEvents.isEmpty()) return
+    for (project in ProjectManager.getInstance().openProjects) {
+      if (project.isDisposed) continue
 
-        for (project in ProjectManager.getInstance().openProjects) {
-            if (project.isDisposed) continue
+      val settings = ComposeResourcesSettings.getInstance(project)
+      if (!settings.enabled) continue
 
-            val settings = ComposeResourcesSettings.getInstance(project)
-            if (!settings.enabled) continue
+      if (!ComposeDetector.getInstance(project).isComposeMultiplatformProject()) continue
 
-            if (!ComposeDetector.getInstance(project).isComposeMultiplatformProject()) continue
+      val basePath = project.basePath ?: continue
+      val service = ComposeResourcesService.getInstance(project)
 
-            val basePath = project.basePath ?: continue
-            val service = ComposeResourcesService.getInstance(project)
-
-            for (event in relevantEvents) {
-                val path = event.path
-                if (path.startsWith(basePath)) {
-                    service.onFileChanged(path)
-                }
-            }
+      for (event in relevantEvents) {
+        val path = event.path
+        if (path.startsWith(basePath)) {
+          service.onFileChanged(path)
         }
+      }
     }
+  }
 
-    private fun VFileEvent.isRelevantEvent(): Boolean {
-        return this is VFileContentChangeEvent
-            || this is VFileCreateEvent
-            || this is VFileDeleteEvent
-            || this is VFileMoveEvent
-            || (this is VFilePropertyChangeEvent && propertyName == "name")
-    }
+  private fun VFileEvent.isRelevantEvent(): Boolean =
+    this is VFileContentChangeEvent ||
+      this is VFileCreateEvent ||
+      this is VFileDeleteEvent ||
+      this is VFileMoveEvent ||
+      (this is VFilePropertyChangeEvent && propertyName == "name")
 }

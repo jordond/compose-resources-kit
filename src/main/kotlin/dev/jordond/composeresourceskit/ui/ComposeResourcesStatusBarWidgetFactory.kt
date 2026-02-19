@@ -15,64 +15,59 @@ import java.awt.event.MouseEvent
 import javax.swing.Icon
 
 class ComposeResourcesStatusBarWidgetFactory : StatusBarWidgetFactory {
+  override fun getId(): String = "ComposeResourcesWidget"
 
-    override fun getId(): String = "ComposeResourcesWidget"
+  override fun getDisplayName(): String = "Compose Resources Kit"
 
-    override fun getDisplayName(): String = "Compose Resources Kit"
+  override fun isAvailable(project: Project): Boolean =
+    ComposeDetector.getInstance(project).isComposeMultiplatformProject()
 
-    override fun isAvailable(project: Project): Boolean {
-        return ComposeDetector.getInstance(project).isComposeMultiplatformProject()
-    }
+  override fun createWidget(project: Project): StatusBarWidget = ComposeResourcesStatusBarWidget(project)
 
-    override fun createWidget(project: Project): StatusBarWidget {
-        return ComposeResourcesStatusBarWidget(project)
-    }
-
-    override fun disposeWidget(widget: StatusBarWidget) {}
+  override fun disposeWidget(widget: StatusBarWidget) {}
 }
 
 private class ComposeResourcesStatusBarWidget(
-    private val project: Project,
-) : StatusBarWidget, StatusBarWidget.IconPresentation {
+  private val project: Project,
+) : StatusBarWidget,
+  StatusBarWidget.IconPresentation {
+  private var statusBar: StatusBar? = null
 
-    private var statusBar: StatusBar? = null
+  override fun ID(): String = "ComposeResourcesWidget"
 
-    override fun ID(): String = "ComposeResourcesWidget"
+  override fun install(statusBar: StatusBar) {
+    this.statusBar = statusBar
+  }
 
-    override fun install(statusBar: StatusBar) {
-        this.statusBar = statusBar
+  override fun dispose() {
+    statusBar = null
+  }
+
+  override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
+
+  override fun getIcon(): Icon {
+    if (!ComposeResourcesSettings.getInstance(project).enabled) {
+      return AllIcons.Actions.Suspend
     }
-
-    override fun dispose() {
-        statusBar = null
+    return when (ComposeResourcesService.getInstance(project).status) {
+      ComposeResourcesService.Status.IDLE -> AllIcons.Actions.Checked
+      ComposeResourcesService.Status.RUNNING -> AllIcons.Actions.Execute
+      ComposeResourcesService.Status.ERROR -> AllIcons.General.Warning
     }
+  }
 
-    override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
-
-    override fun getIcon(): Icon {
-        if (!ComposeResourcesSettings.getInstance(project).enabled) {
-            return AllIcons.Actions.Suspend
-        }
-        return when (ComposeResourcesService.getInstance(project).status) {
-            ComposeResourcesService.Status.IDLE -> AllIcons.Actions.Checked
-            ComposeResourcesService.Status.RUNNING -> AllIcons.Actions.Execute
-            ComposeResourcesService.Status.ERROR -> AllIcons.General.Warning
-        }
+  override fun getTooltipText(): String {
+    val settings = ComposeResourcesSettings.getInstance(project)
+    if (!settings.enabled) return "Compose Resources Kit: Disabled"
+    return when (ComposeResourcesService.getInstance(project).status) {
+      ComposeResourcesService.Status.IDLE -> "Compose Resources Kit: Watching"
+      ComposeResourcesService.Status.RUNNING -> "Compose Resources Kit: Generating..."
+      ComposeResourcesService.Status.ERROR -> "Compose Resources Kit: Error (click for settings)"
     }
+  }
 
-    override fun getTooltipText(): String {
-        val settings = ComposeResourcesSettings.getInstance(project)
-        if (!settings.enabled) return "Compose Resources Kit: Disabled"
-        return when (ComposeResourcesService.getInstance(project).status) {
-            ComposeResourcesService.Status.IDLE -> "Compose Resources Kit: Watching"
-            ComposeResourcesService.Status.RUNNING -> "Compose Resources Kit: Generating..."
-            ComposeResourcesService.Status.ERROR -> "Compose Resources Kit: Error (click for settings)"
-        }
-    }
-
-    override fun getClickConsumer(): Consumer<MouseEvent> {
-        return Consumer {
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, ComposeResourcesConfigurable::class.java)
-        }
+  override fun getClickConsumer(): Consumer<MouseEvent> =
+    Consumer {
+      ShowSettingsUtil.getInstance().showSettingsDialog(project, ComposeResourcesConfigurable::class.java)
     }
 }
