@@ -18,6 +18,7 @@ import com.intellij.util.Alarm
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
 import dev.jordond.composeresourceskit.settings.ComposeResourcesSettings
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
@@ -83,51 +84,50 @@ class ComposeResourcesService(
   }
 
   private fun resolveModulePath(filePath: String): String? {
-    val pathBeforeResources: String = run {
-      val composeResIdx = filePath.indexOf("/composeResources")
-      if (composeResIdx != -1) return@run filePath.substring(0, composeResIdx)
-
-      val settings = ComposeResourcesSettings.getInstance(project)
-      for (customPath in settings.additionalResourcePaths) {
-        val idx = filePath.indexOf("/$customPath/")
-        if (idx != -1) return@run filePath.substring(0, idx)
-        if (filePath.endsWith("/$customPath")) return@run filePath.removeSuffix("/$customPath")
-      }
-      return null
-    }
-
+    val pathBeforeResources = extractPathBeforeResources(filePath) ?: return null
+    val projectRoot = project.basePath ?: return null
     val detector = ComposeDetector.getInstance(project)
 
-    data class Candidate(
-      val externalPath: String,
-      val gradlePath: String,
-    )
+    // Walk up from the resource directory to find the owning Gradle module
+    // by locating the nearest build.gradle(.kts) file.
+    var dir = File(pathBeforeResources)
+    val rootDir = File(projectRoot)
+    while (dir.path.startsWith(rootDir.path)) {
+      val hasBuildFile = dir.resolve("build.gradle.kts").exists() || dir.resolve("build.gradle").exists()
+      if (hasBuildFile) {
+        val dirPath = dir.path
+        // Find the root Gradle module (not a source-set sub-module) at this path.
+        // Source-set modules share the same externalProjectPath but have more ':' segments.
+        val module = ModuleManager.getInstance(project).modules
+          .filter { ExternalSystemApiUtil.getExternalProjectPath(it) == dirPath }
+          .filter { detector.isComposeModule(it) }
+          .minByOrNull { ExternalSystemApiUtil.getExternalProjectId(it)?.count { c -> c == ':' } ?: Int.MAX_VALUE }
 
-    val candidates = mutableListOf<Candidate>()
-    for (module in ModuleManager.getInstance(project).modules) {
-      val externalPath = ExternalSystemApiUtil.getExternalProjectPath(module) ?: continue
-      if (!pathBeforeResources.startsWith(externalPath)) continue
-      val gradlePath = ExternalSystemApiUtil.getExternalProjectId(module) ?: continue
-      if (!detector.isComposeModule(module)) continue
-      candidates.add(Candidate(externalPath, gradlePath))
-    }
-
-    // Among all matches, pick the one whose externalPath is longest (most specific directory),
-    // then among ties prefer the fewest Gradle path segments (the root module, not a source-set sub-module).
-    val best = candidates
-      .sortedWith(
-        compareByDescending<Candidate> { it.externalPath.length }.thenBy {
-          it.gradlePath.count { c ->
-            c == ':'
+        if (module != null) {
+          val gradlePath = ExternalSystemApiUtil.getExternalProjectId(module) ?: return null
+          return when {
+            gradlePath == ":" || gradlePath.isBlank() -> ""
+            else -> gradlePath.trimEnd(':')
           }
-        },
-      ).firstOrNull() ?: return null
+        }
+      }
 
-    val gradlePath = best.gradlePath
-    return when {
-      gradlePath == ":" || gradlePath.isBlank() -> ""
-      else -> gradlePath.trimEnd(':')
+      dir = dir.parentFile ?: break
     }
+    return null
+  }
+
+  private fun extractPathBeforeResources(filePath: String): String? {
+    val composeResIdx = filePath.indexOf("/composeResources")
+    if (composeResIdx != -1) return filePath.substring(0, composeResIdx)
+
+    val settings = ComposeResourcesSettings.getInstance(project)
+    for (customPath in settings.additionalResourcePaths) {
+      val idx = filePath.indexOf("/$customPath/")
+      if (idx != -1) return filePath.substring(0, idx)
+      if (filePath.endsWith("/$customPath")) return filePath.removeSuffix("/$customPath")
+    }
+    return null
   }
 
   private fun runGenerateTask(modulePath: String) {
