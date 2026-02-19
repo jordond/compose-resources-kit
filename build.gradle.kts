@@ -22,7 +22,7 @@ dependencies {
         intellijIdea("2025.2.4")
         testFramework(TestFrameworkType.Platform)
 
-        bundledPlugin("org.jetbrains.kotlin")
+        bundledPlugin("com.intellij.gradle")
     }
 }
 

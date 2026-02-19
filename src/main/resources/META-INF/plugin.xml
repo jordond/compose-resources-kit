@@ -1,31 +1,47 @@
-<!-- Plugin Configuration File: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <!-- Unique identifier of the plugin. It should be FQN, cannot be changed between the plugin versions. -->
     <id>dev.jordond.compose-resources-kit</id>
-
-    <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
-    <name>Compose-Resources-Kit</name>
-
-    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <name>Compose Resources Kit</name>
     <vendor url="https://jordond.dev">jordond</vendor>
 
-    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
     <description><![CDATA[
-        Enter short description for your plugin here.<br>
-        <em>most HTML tags may be used</em>
+        Automatically regenerates Compose Multiplatform resource accessors when
+        files in composeResources directories are modified.<br><br>
+        Eliminates the need to manually run <code>generateResourceAccessorsForCommonMain</code>
+        after editing strings.xml, drawables, or other resource files.<br><br>
+        Supports custom resource directories configured via
+        <code>compose.resources { customDirectory(...) }</code>.<br><br>
+        The plugin only activates for projects using the <code>org.jetbrains.compose</code> Gradle plugin.
     ]]></description>
 
-    <!-- Product and plugin compatibility requirements.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.gradle</depends>
 
-    <depends>org.jetbrains.kotlin</depends>
-    <resource-bundle>messages.MyMessageBundle</resource-bundle>
-    <!-- Extensions defined by the plugin.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="MyToolWindow" factoryClass="dev.jordond.composeresourceskit.MyToolWindowFactory"
-                    icon="AllIcons.Toolwindows.ToolWindowPalette"/>
+        <projectConfigurable
+            id="dev.jordond.composeresourceskit.settings"
+            parentId="tools"
+            displayName="Compose Resources Kit"
+            provider="dev.jordond.composeresourceskit.settings.ComposeResourcesConfigurableProvider"/>
+
+        <projectService
+            serviceImplementation="dev.jordond.composeresourceskit.settings.ComposeResourcesSettings"/>
+
+        <projectService
+            serviceImplementation="dev.jordond.composeresourceskit.service.ComposeDetector"/>
+
+        <projectService
+            serviceImplementation="dev.jordond.composeresourceskit.service.ComposeResourcesService"/>
+
+        <statusBarWidgetFactory
+            id="ComposeResourcesWidget"
+            implementation="dev.jordond.composeresourceskit.ui.ComposeResourcesStatusBarWidgetFactory"/>
+
+        <notificationGroup id="Compose Resources Kit" displayType="BALLOON"/>
     </extensions>
+
+    <applicationListeners>
+        <listener
+            class="dev.jordond.composeresourceskit.listener.ComposeResourcesFileListener"
+            topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
+    </applicationListeners>
 </idea-plugin>
