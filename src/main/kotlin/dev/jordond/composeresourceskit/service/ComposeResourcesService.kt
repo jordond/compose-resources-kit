@@ -28,13 +28,13 @@ class ComposeResourcesService(
   private val runningModules = ConcurrentHashMap.newKeySet<String>()
 
   private val updateQueue = MergingUpdateQueue(
-    "ComposeResourcesGeneration",
-    ComposeResourcesSettings.getInstance(project).debounceMs,
-    true,
-    null,
-    this,
-    null,
-    Alarm.ThreadToUse.POOLED_THREAD,
+    name = "ComposeResourcesGeneration",
+    mergingTimeSpan = ComposeResourcesSettings.getInstance(project).debounceMs,
+    isActive = true,
+    modalityStateComponent = null,
+    parent = this,
+    activationComponent = null,
+    thread = Alarm.ThreadToUse.POOLED_THREAD,
   )
 
   enum class Status { IDLE, RUNNING, ERROR }
@@ -50,16 +50,34 @@ class ComposeResourcesService(
 
   fun onFileChanged(filePath: String) {
     if (project.isDisposed) return
-    if (!isWatchedResourcePath(filePath)) return
+    val pluginLog = PluginLogger.getInstance(project)
 
-    val match = resolveResourceMatch(filePath) ?: return
+    if (!isWatchedResourcePath(filePath)) {
+      pluginLog.info("  Skipped (not a watched resource path): $filePath")
+      return
+    }
 
+    val match = resolveResourceMatch(filePath)
+    if (match == null) {
+      pluginLog.warn("  Could not resolve Gradle module for: $filePath")
+      return
+    }
+
+    pluginLog.info(
+      "  Matched module=${match.gradleModulePath} sourceSet=${match.sourceSet} — queuing task (debounce ${
+        ComposeResourcesSettings.getInstance(
+          project,
+        ).debounceMs
+      }ms)",
+    )
     val updateKey = "${match.gradleModulePath}:${match.sourceSet}"
-    updateQueue.queue(object : Update("compose-resources-$updateKey") {
-      override fun run() {
-        runGenerateTask(match)
-      }
-    })
+    updateQueue.queue(
+      object : Update("compose-resources-$updateKey") {
+        override fun run() {
+          runGenerateTask(match)
+        }
+      },
+    )
   }
 
   private fun isWatchedResourcePath(path: String): Boolean {
@@ -155,13 +173,16 @@ class ComposeResourcesService(
       "${match.gradleModulePath}:generateResourceAccessorsFor$capitalizedSourceSet"
     }
 
+    val pluginLog = PluginLogger.getInstance(project)
     log.info("Running Gradle task: $taskName")
+    pluginLog.info("Running Gradle task: $taskName")
     updateStatus(Status.RUNNING)
 
     val basePath = project.basePath
     if (basePath == null) {
       runningModules.remove(moduleKey)
       updateStatus(Status.IDLE)
+      pluginLog.error("basePath is null — cannot run task")
       return
     }
 
@@ -185,16 +206,18 @@ class ComposeResourcesService(
 
       runningModules.remove(moduleKey)
       updateStatus(if (runningModules.isEmpty()) Status.IDLE else Status.RUNNING)
+      pluginLog.info("Gradle task dispatched successfully: $taskName")
+      log.info("Gradle task dispatched: $taskName")
       val settings = ComposeResourcesSettings.getInstance(project)
       if (settings.showNotifications) {
         val moduleLabel = match.gradleModulePath.ifEmpty { "root" }
         notify("Resource accessors generated for $moduleLabel (${match.sourceSet})")
       }
-      log.info("Gradle task dispatched: $taskName")
     } catch (e: Exception) {
       runningModules.remove(moduleKey)
       updateStatus(Status.ERROR)
       log.error("Failed to run Gradle task: $taskName", e)
+      pluginLog.error("Failed to run Gradle task: $taskName — ${e.message}")
       val settings = ComposeResourcesSettings.getInstance(project)
       if (settings.showNotifications) {
         notify("Failed to run Gradle task: ${e.message}", NotificationType.ERROR)

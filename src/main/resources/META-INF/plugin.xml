@@ -32,6 +32,9 @@
         <projectService
             serviceImplementation="dev.jordond.composeresourceskit.service.ComposeResourcesService"/>
 
+        <projectService
+            serviceImplementation="dev.jordond.composeresourceskit.service.PluginLogger"/>
+
         <statusBarWidgetFactory
             id="ComposeResourcesWidget"
             implementation="dev.jordond.composeresourceskit.ui.ComposeResourcesStatusBarWidgetFactory"/>

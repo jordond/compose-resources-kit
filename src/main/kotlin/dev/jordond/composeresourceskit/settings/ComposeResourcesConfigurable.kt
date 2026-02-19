@@ -1,14 +1,23 @@
 package dev.jordond.composeresourceskit.settings
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurableProvider
 import com.intellij.openapi.project.Project
+import com.intellij.ui.JBColor
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
+import dev.jordond.composeresourceskit.service.ComposeDetector
+import dev.jordond.composeresourceskit.service.ComposeResourcesService
+import dev.jordond.composeresourceskit.service.PluginLogger
+import java.awt.Font
 import javax.swing.DefaultListModel
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JSpinner
 
@@ -25,6 +34,8 @@ class ComposeResourcesConfigurable(
   private var debounceSpinner: JSpinner? = null
   private var notificationsCheckBox: JBCheckBox? = null
   private var pathsListModel: DefaultListModel<String>? = null
+  private var logTextArea: JBTextArea? = null
+  private var logListener: (() -> Unit)? = null
 
   override fun getDisplayName(): String = "Compose Resources Kit"
 
@@ -57,6 +68,44 @@ class ComposeResourcesConfigurable(
       }.disableUpDownActions()
       .createPanel()
 
+    val textArea = JBTextArea().apply {
+      isEditable = false
+      font = Font(Font.MONOSPACED, Font.PLAIN, 11)
+      lineWrap = true
+      wrapStyleWord = false
+      background = JBColor.background()
+    }
+    logTextArea = textArea
+
+    val pluginLog = PluginLogger.getInstance(project)
+    val listener: () -> Unit = {
+      ApplicationManager.getApplication().invokeLater {
+        refreshLogText(textArea, pluginLog)
+      }
+    }
+    logListener = listener
+    pluginLog.addListener(listener)
+    refreshLogText(textArea, pluginLog)
+
+    val scrollPane = JBScrollPane(textArea).apply {
+      preferredSize = java.awt.Dimension(600, 200)
+    }
+
+    val refreshDetectionButton = JButton("Refresh Detection").apply {
+      addActionListener {
+        ComposeDetector.getInstance(project).invalidateCache()
+        pluginLog.info("--- Detection cache cleared by user ---")
+        val service = ComposeResourcesService.getInstance(project)
+        pluginLog.info("Current status: ${service.status}")
+      }
+    }
+
+    val clearLogsButton = JButton("Clear Logs").apply {
+      addActionListener {
+        pluginLog.clear()
+      }
+    }
+
     return panel {
       group("General") {
         row {
@@ -88,6 +137,21 @@ class ComposeResourcesConfigurable(
             .align(Align.FILL)
         }
       }
+      group("Diagnostics") {
+        row {
+          comment(
+            "Live log of plugin activity. Edit a file in your composeResources directory " +
+              "and watch for entries here. If the project is not detected, click 'Refresh Detection'.",
+          )
+        }
+        row {
+          cell(scrollPane).align(Align.FILL)
+        }
+        row {
+          cell(refreshDetectionButton)
+          cell(clearLogsButton)
+        }
+      }
       group("Info") {
         row {
           comment(
@@ -97,6 +161,26 @@ class ComposeResourcesConfigurable(
           )
         }
       }
+    }
+  }
+
+  private fun refreshLogText(
+    textArea: JBTextArea,
+    pluginLog: PluginLogger,
+  ) {
+    val sb = StringBuilder()
+    for (entry in pluginLog.getEntries()) {
+      val prefix = when (entry.level) {
+        PluginLogger.Entry.Level.INFO -> "   "
+        PluginLogger.Entry.Level.WARN -> "[!]"
+        PluginLogger.Entry.Level.ERROR -> "[E]"
+      }
+      sb.appendLine("${entry.time} $prefix ${entry.message}")
+    }
+    textArea.text = sb.toString()
+    val doc = textArea.document
+    if (doc.length > 0) {
+      textArea.caretPosition = doc.length
     }
   }
 
@@ -143,9 +227,12 @@ class ComposeResourcesConfigurable(
   }
 
   override fun disposeUIResources() {
+    logListener?.let { PluginLogger.getInstance(project).removeListener(it) }
     enabledCheckBox = null
     debounceSpinner = null
     notificationsCheckBox = null
     pathsListModel = null
+    logTextArea = null
+    logListener = null
   }
 }

@@ -9,6 +9,7 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
+import org.jetbrains.plugins.gradle.settings.GradleExtensionsSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -26,9 +27,20 @@ class ComposeDetector(
   fun isComposeMultiplatformProject(): Boolean {
     projectCache?.let { return it }
 
-    val result = ModuleManager.getInstance(project).modules.any { isComposeModule(it) }
+    val pluginLog = PluginLogger.getInstance(project)
+    val modules = ModuleManager.getInstance(project).modules
+    pluginLog.info("Detection: checking ${modules.size} module(s)...")
+
+    val result = modules.any { isComposeModule(it) }
     projectCache = result
-    log.info("Compose Multiplatform project detection: $result")
+    val msg =
+      if (result) {
+        "Project IS Compose Multiplatform"
+      } else {
+        "Project is NOT Compose Multiplatform — plugin will not react to file changes"
+      }
+    log.info(msg)
+    pluginLog.info(msg)
     return result
   }
 
@@ -36,12 +48,30 @@ class ComposeDetector(
     val moduleId = module.name
     moduleCache[moduleId]?.let { return it }
 
-    val result = checkViaGradleTasks(module)
-      ?: checkViaBuildScript(module)
-      ?: checkViaResourceDirectories(module)
-      ?: false
+    val pluginLog = PluginLogger.getInstance(project)
 
+    val viaGradle = checkViaGradleTasks(module)
+    pluginLog.info("  [${module.name}] via Gradle tasks: $viaGradle")
+
+    val viaExtensions = if (viaGradle == null) {
+      checkViaGradleExtensions(module).also {
+        pluginLog.info("  [${module.name}] via Gradle extensions: $it")
+      }
+    } else {
+      null
+    }
+
+    val viaDirs = if (viaGradle == null && viaExtensions == null) {
+      checkViaResourceDirectories(module).also {
+        pluginLog.info("  [${module.name}] via resource dirs: $it")
+      }
+    } else {
+      null
+    }
+
+    val result = viaGradle ?: viaExtensions ?: viaDirs ?: false
     moduleCache[moduleId] = result
+    if (result) pluginLog.info("  [${module.name}] -> COMPOSE MODULE")
     return result
   }
 
@@ -68,22 +98,14 @@ class ComposeDetector(
     return if (moduleTasks.isNotEmpty()) hasResourceTask else null
   }
 
-  private fun checkViaBuildScript(module: Module): Boolean? {
-    val modulePath = ExternalSystemApiUtil.getExternalProjectPath(module) ?: return null
-    val moduleDir = File(modulePath)
-
-    val buildFile = File(moduleDir, "build.gradle.kts").takeIf { it.exists() }
-      ?: File(moduleDir, "build.gradle").takeIf { it.exists() }
-      ?: return null
-
-    return try {
-      val content = buildFile.readText()
-      content.contains("org.jetbrains.compose") ||
-        content.contains("org.jetbrains.kotlin.plugin.compose")
-    } catch (e: Exception) {
-      log.debug("Failed to read build script: ${buildFile.path}", e)
-      null
+  private fun checkViaGradleExtensions(module: Module): Boolean? {
+    val settings = GradleExtensionsSettings.getInstance(project)
+    val extensionsData = settings.getExtensionsFor(module) ?: return null
+    val isCompose = extensionsData.extensions.values.any { ext ->
+      ext.typeFqn == "org.jetbrains.compose.ComposeExtension" ||
+        ext.typeFqn.startsWith("org.jetbrains.compose.")
     }
+    return if (isCompose) true else null
   }
 
   private fun checkViaResourceDirectories(module: Module): Boolean? {
@@ -102,7 +124,9 @@ class ComposeDetector(
   fun invalidateCache() {
     moduleCache.clear()
     projectCache = null
-    log.info("Compose detection cache invalidated")
+    val msg = "Detection cache invalidated — will re-check on next file event"
+    log.info(msg)
+    PluginLogger.getInstance(project).info(msg)
   }
 
   override fun dispose() {
