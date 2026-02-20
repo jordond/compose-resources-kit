@@ -58,48 +58,49 @@ private class ComposeResourcesStatusBarWidget(
     statusBar = null
   }
 
-  override fun getPresentation(): StatusBarWidget.WidgetPresentation = object : StatusBarWidget.IconPresentation {
-    override fun getIcon(): Icon {
-      if (!ComposeResourcesSettings.getInstance(project).enabled) {
-        return ComposeResourcesIcons.Disabled
-      }
-      return when (ComposeResourcesService.getInstance(project).status) {
-        ComposeResourcesService.Status.IDLE -> ComposeResourcesIcons.Success
-        ComposeResourcesService.Status.RUNNING -> ComposeResourcesIcons.Running
-        ComposeResourcesService.Status.ERROR -> ComposeResourcesIcons.Error
-      }
-    }
-
-    override fun getTooltipText(): String {
-      val settings = ComposeResourcesSettings.getInstance(project)
-      if (!settings.enabled) return "Compose Resources Kit: Disabled"
-      return when (ComposeResourcesService.getInstance(project).status) {
-        ComposeResourcesService.Status.IDLE -> "Compose Resources Kit: Watching"
-        ComposeResourcesService.Status.RUNNING -> "Compose Resources Kit: Generating..."
-        ComposeResourcesService.Status.ERROR -> "Compose Resources Kit: Error"
-      }
-    }
-
-    override fun getClickConsumer(): Consumer<MouseEvent> =
-      Consumer { e ->
-        val component = e.component ?: return@Consumer
-        val group = createActionGroup()
-        val dataContext = DataContext { dataId ->
-          when (dataId) {
-            CommonDataKeys.PROJECT.name -> project
-            else -> null
-          }
+  override fun getPresentation(): StatusBarWidget.WidgetPresentation =
+    object : StatusBarWidget.IconPresentation {
+      override fun getIcon(): Icon {
+        if (!ComposeResourcesSettings.getInstance(project).enabled) {
+          return ComposeResourcesIcons.Disabled
         }
-        val popup = JBPopupFactory.getInstance().createActionGroupPopup(
-          "Compose Resources Kit",
-          group,
-          dataContext,
-          JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-          true,
-        )
-        popup.showUnderneathOf(component)
+        return when (ComposeResourcesService.getInstance(project).status) {
+          ComposeResourcesService.Status.IDLE -> ComposeResourcesIcons.Success
+          ComposeResourcesService.Status.RUNNING -> ComposeResourcesIcons.Running
+          ComposeResourcesService.Status.ERROR -> ComposeResourcesIcons.Error
+        }
       }
-  }
+
+      override fun getTooltipText(): String {
+        val settings = ComposeResourcesSettings.getInstance(project)
+        if (!settings.enabled) return "Compose Resources Kit: Disabled"
+        return when (ComposeResourcesService.getInstance(project).status) {
+          ComposeResourcesService.Status.IDLE -> "Compose Resources Kit: Watching"
+          ComposeResourcesService.Status.RUNNING -> "Compose Resources Kit: Generating..."
+          ComposeResourcesService.Status.ERROR -> "Compose Resources Kit: Error"
+        }
+      }
+
+      override fun getClickConsumer(): Consumer<MouseEvent> =
+        Consumer { e ->
+          val component = e.component ?: return@Consumer
+          val group = createActionGroup()
+          val dataContext = DataContext { dataId ->
+            when (dataId) {
+              CommonDataKeys.PROJECT.name -> project
+              else -> null
+            }
+          }
+          val popup = JBPopupFactory.getInstance().createActionGroupPopup(
+            "Compose Resources Kit",
+            group,
+            dataContext,
+            JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+            true,
+          )
+          popup.showUnderneathOf(component)
+        }
+    }
 
   private fun createActionGroup(): DefaultActionGroup {
     val settings = ComposeResourcesSettings.getInstance(project)
