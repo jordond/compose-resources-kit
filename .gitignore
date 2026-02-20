@@ -6,6 +6,7 @@ build/
 .kotlin
 .intellijPlatform
 *.log
+secrets
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

@@ -1,14 +1,14 @@
 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0.16" stop-color="#3BEA62"/>
-            <stop offset="0.54" stop-color="#3C99CC"/>
-            <stop offset="0.94" stop-color="#6B57FF"/>
+            <stop offset="0.16" stop-color="#4BFA72"/>
+            <stop offset="0.54" stop-color="#4CA9DC"/>
+            <stop offset="0.94" stop-color="#7B67FF"/>
         </linearGradient>
         <linearGradient id="code" x1="13" y1="16" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stop-color="#2BD852"/>
-            <stop offset="0.5" stop-color="#3089BC"/>
-            <stop offset="1" stop-color="#5B47EF"/>
+            <stop offset="0" stop-color="#3BE862"/>
+            <stop offset="0.5" stop-color="#4099CC"/>
+            <stop offset="1" stop-color="#6B57FF"/>
         </linearGradient>
     </defs>
     <!-- Rounded gradient background -->

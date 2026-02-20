@@ -63,12 +63,12 @@ private class ComposeResourcesStatusBarWidget(
 
   override fun getIcon(): Icon {
     if (!ComposeResourcesSettings.getInstance(project).enabled) {
-      return AllIcons.Actions.Suspend
+      return ComposeResourcesIcons.Disabled
     }
     return when (ComposeResourcesService.getInstance(project).status) {
-      ComposeResourcesService.Status.IDLE -> AllIcons.Actions.Checked
-      ComposeResourcesService.Status.RUNNING -> AllIcons.Actions.Execute
-      ComposeResourcesService.Status.ERROR -> AllIcons.General.Warning
+      ComposeResourcesService.Status.IDLE -> ComposeResourcesIcons.Success
+      ComposeResourcesService.Status.RUNNING -> ComposeResourcesIcons.Running
+      ComposeResourcesService.Status.ERROR -> ComposeResourcesIcons.Error
     }
   }
 

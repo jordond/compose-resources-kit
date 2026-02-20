@@ -8,8 +8,6 @@
         files in composeResources directories are modified.<br><br>
         Eliminates the need to manually run <code>generateResourceAccessorsForCommonMain</code>
         after editing strings.xml, drawables, or other resource files.<br><br>
-        Supports custom resource directories configured via
-        <code>compose.resources { customDirectory(...) }</code>.<br><br>
         The plugin only activates for projects using the <code>org.jetbrains.compose</code> Gradle plugin.
     ]]></description>
 
