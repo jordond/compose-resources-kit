@@ -16,6 +16,8 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.gradle</depends>
+    <depends>com.intellij.modules.xml</depends>
+    <depends>org.jetbrains.kotlin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable
@@ -32,5 +34,11 @@
 
         <postStartupActivity
             implementation="dev.jordond.composeresourceskit.ComposeResourcesStartupActivity"/>
+
+        <gotoDeclarationHandler implementation="dev.jordond.composeresourceskit.ResourceGotoDeclarationHandler"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true" supportsK1="true"/>
     </extensions>
 </idea-plugin>
