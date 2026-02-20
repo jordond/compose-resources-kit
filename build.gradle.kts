@@ -47,6 +47,12 @@ intellijPlatform {
     privateKey = System.getenv("SIGNING_PRIVATE_KEY")
     password = System.getenv("SIGNING_PASSWORD")
   }
+
+  pluginVerification {
+    ides {
+      recommended()
+    }
+  }
 }
 
 tasks {
