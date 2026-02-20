@@ -189,5 +189,4 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
 
     assertNull(result)
   }
-
 }
