@@ -37,10 +37,6 @@
 
         <gotoDeclarationHandler implementation="dev.jordond.composeresourceskit.ResourceGotoDeclarationHandler"/>
 
-        <lang.documentationProvider
-            language="kotlin"
-            implementationClass="dev.jordond.composeresourceskit.ComposeResourceDocumentationProvider"/>
-
         <localInspection
             language="XML"
             implementationClass="dev.jordond.composeresourceskit.inspection.UnusedComposeResourceInspection"

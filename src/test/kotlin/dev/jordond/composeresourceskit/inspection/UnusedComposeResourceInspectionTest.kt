@@ -225,6 +225,31 @@ class UnusedComposeResourceInspectionTest : BasePlatformTestCase() {
     assertTrue(unusedWarnings[0].description!!.contains("unused_one"))
   }
 
+  fun testUsedInGeneratedCodeIsStillUnused() {
+    addComposeResource(
+      "values/strings.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string name="unused_except_generated">Not used in source</string>
+      </resources>
+      """.trimIndent(),
+    )
+
+    // Simulate generated code in a "build" directory
+    myFixture.addFileToProject("build/generated/Res.kt", "val x = Res.string.unused_except_generated")
+
+    val file = myFixture.findFileInTempDir("composeResources/values/strings.xml")!!
+    myFixture.configureFromExistingVirtualFile(file)
+
+    val highlights = myFixture.doHighlighting()
+    val unusedWarnings = highlights.filter {
+      it.description?.contains("Unused Compose resource") == true
+    }
+
+    assertFalse("Resource used ONLY in generated code should still be flagged as unused", unusedWarnings.isEmpty())
+  }
+
   fun testSimilarNamesConflictReproduction() {
     addComposeResource(
       "values/strings.xml",

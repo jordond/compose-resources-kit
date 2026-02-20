@@ -231,4 +231,26 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
 
     assertNull(result)
   }
+
+  fun testNavigateFromXmlToKotlinUsages() {
+    addComposeResource("values/strings.xml", stringsXml)
+    myFixture.addFileToProject("src/Main.kt", "val x = Res.string.app_name")
+    myFixture.addFileToProject("src/Other.kt", "val y = Res.string.app_name")
+
+    val file = myFixture.findFileInTempDir("composeResources/values/strings.xml")!!
+    myFixture.configureFromExistingVirtualFile(file)
+
+    // Find the 'app_name' attribute value
+    val text = myFixture.editor.document.text
+    val offset = text.indexOf("app_name")
+    val element = myFixture.file.findElementAt(offset)!!
+
+    val targets = handler.getGotoDeclarationTargets(element, offset, myFixture.editor)
+
+    assertNotNull(targets)
+    assertEquals(2, targets!!.size)
+    assertTrue(targets.all { it.text == "Res.string.app_name" })
+    assertTrue(targets.any { it.containingFile.name == "Main.kt" })
+    assertTrue(targets.any { it.containingFile.name == "Other.kt" })
+  }
 }

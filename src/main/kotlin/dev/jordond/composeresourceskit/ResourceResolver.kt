@@ -8,12 +8,17 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.PsiSearchHelper
+import com.intellij.psi.search.UsageSearchContext
 import com.intellij.psi.xml.XmlFile
 import com.intellij.psi.xml.XmlTag
+import dev.jordond.composeresourceskit.service.PluginLogger
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.getQualifiedExpressionForSelector
+import javax.swing.Icon
 
 private val RESOURCE_KEY_REGEX = "[a-zA-Z_][a-zA-Z0-9_]*".toRegex()
 private val DRAWABLE_EXTENSIONS = listOf("png", "jpg", "jpeg", "bmp", "webp", "xml", "svg")
@@ -53,16 +58,30 @@ val XML_TAG_TO_RES_PREFIX: Map<String, String> = mapOf(
 
 object ResourceResolver {
   fun resolveResourceReference(element: PsiElement): ResourceReference? {
+    // If it's a name reference (like 'app_name'), get its qualified expression (e.g. 'Res.string.app_name')
     if (element is KtNameReferenceExpression) {
       val qualified = element.getQualifiedExpressionForSelector()
-      if (qualified != null) return extractResourceReference(qualified)
+      if (qualified != null) {
+        val ref = extractResourceReference(qualified)
+        if (ref != null) return ref
+      }
     }
 
+    // Try finding the closest dot qualified expression by walking up
     val dotQualified = generateSequence(element) { it.parent }
       .filterIsInstance<KtDotQualifiedExpression>()
       .firstOrNull()
 
-    return dotQualified?.let { extractResourceReference(it) }
+    val ref = dotQualified?.let { extractResourceReference(it) }
+    if (ref != null) return ref
+
+    // Handle if the element is actually part of a name reference (e.g. the LeafPsiElement identifier)
+    val parent = element.parent
+    if (parent != null && parent != element && parent !is org.jetbrains.kotlin.psi.KtFile) {
+        return resolveResourceReference(parent)
+    }
+
+    return null
   }
 
   fun extractResourceReference(expression: KtExpression): ResourceReference? {
@@ -74,6 +93,20 @@ object ResourceResolver {
       } else {
         null
       }
+    }
+  }
+
+  fun resolveResourceFromXml(element: PsiElement): ResourceReference? {
+    val tag = generateSequence(element) { it.parent }
+      .filterIsInstance<XmlTag>()
+      .firstOrNull() ?: return null
+
+    if (tag.name !in XML_TAG_TO_RES_PREFIX) return null
+    if (tag.containingFile?.virtualFile?.isInComposeResources() != true) return null
+
+    val name = tag.getAttributeValue("name") ?: return null
+    return XML_TAG_TO_RES_PREFIX[tag.name]?.let { prefix ->
+      ResourceReference.XmlResource(name, tag.name)
     }
   }
 
@@ -128,6 +161,80 @@ object ResourceResolver {
 
     return (xmlMatches + fileMatches).toList()
   }
+
+  fun findUsages(
+    project: Project,
+    ref: ResourceReference,
+  ): List<PsiElement> {
+    val resPrefix = when (ref) {
+      is ResourceReference.XmlResource -> XML_TAG_TO_RES_PREFIX[ref.xmlTag] ?: return emptyList()
+      is ResourceReference.FileResource -> "Res.${ref.dirPrefix}."
+    }
+    val resourceName = ref.key
+    val fullRef = "$resPrefix$resourceName"
+    val scope = GlobalSearchScope.projectScope(project)
+    val searchHelper = PsiSearchHelper.getInstance(project)
+
+    val usages = mutableListOf<PsiElement>()
+    searchHelper.processElementsWithWord(
+      { element, _ ->
+        val file = element.containingFile?.virtualFile
+        if (file != null && (file.path.contains("/build/") || file.path.contains("/.gradle/"))) {
+          return@processElementsWithWord true
+        }
+
+        if (element is KtSimpleNameExpression && element.text == resourceName) {
+          val parent = element.parent
+          if (parent is KtDotQualifiedExpression && parent.text.endsWith(fullRef)) {
+            usages.add(ResourceUsageTarget(parent))
+          }
+        }
+        true
+      },
+      scope,
+      resourceName,
+      UsageSearchContext.IN_CODE,
+      true,
+    )
+
+    return usages
+  }
+}
+
+/**
+ * A wrapper for a resource usage element that provides a custom presentation in navigation lists.
+ * Displays the full resource expression (e.g. Res.string.app_name) and includes the file name
+ * alongside the module name in the location string.
+ */
+private class ResourceUsageTarget(val element: PsiElement) : PsiElement by element, com.intellij.navigation.NavigationItem {
+  override fun getPresentation(): com.intellij.navigation.ItemPresentation {
+    return object : com.intellij.navigation.ItemPresentation {
+      override fun getPresentableText(): String = element.text
+
+      override fun getLocationString(): String {
+        val module = com.intellij.openapi.module.ModuleUtilCore.findModuleForPsiElement(element)?.name
+        val fileName = element.containingFile?.name ?: ""
+        return if (module != null) "[$module] $fileName" else fileName
+      }
+
+      override fun getIcon(unused: Boolean): Icon? = element.getIcon(0)
+    }
+  }
+
+  override fun getNavigationElement(): PsiElement = element
+  override fun getOriginalElement(): PsiElement = element.originalElement
+
+  override fun getName(): String? = (element as? com.intellij.navigation.NavigationItem)?.name
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    val otherElement = (other as? ResourceUsageTarget)?.element ?: other
+    return element == otherElement
+  }
+
+  override fun hashCode(): Int = element.hashCode()
+
+  override fun toString(): String = "ResourceUsageTarget($element)"
 }
 
 internal fun VirtualFile.isInComposeResources(): Boolean {

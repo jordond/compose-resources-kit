@@ -12,14 +12,25 @@ class ResourceGotoDeclarationHandler : GotoDeclarationHandler {
     editor: Editor,
   ): Array<PsiElement>? {
     val project = sourceElement?.project ?: return null
-    val ref = ResourceResolver.resolveResourceReference(sourceElement) ?: return null
 
-    val targets = when (ref) {
-      is ResourceReference.XmlResource -> ResourceResolver.findXmlResourceTargets(project, ref)
-      is ResourceReference.FileResource -> ResourceResolver.findFileResources(project, ref)
+    // Handle Kotlin -> XML
+    val kotlinRef = ResourceResolver.resolveResourceReference(sourceElement)
+    if (kotlinRef != null) {
+      val targets = when (kotlinRef) {
+        is ResourceReference.XmlResource -> ResourceResolver.findXmlResourceTargets(project, kotlinRef)
+        is ResourceReference.FileResource -> ResourceResolver.findFileResources(project, kotlinRef)
+      }
+      return targets.takeIf { it.isNotEmpty() }?.toTypedArray()
     }
 
-    return targets.takeIf { it.isNotEmpty() }?.toTypedArray()
+    // Handle XML -> Kotlin (Find Usages)
+    val xmlRef = ResourceResolver.resolveResourceFromXml(sourceElement)
+    if (xmlRef != null) {
+      val targets = ResourceResolver.findUsages(project, xmlRef)
+      return targets.takeIf { it.isNotEmpty() }?.toTypedArray()
+    }
+
+    return null
   }
 
   override fun getActionText(context: DataContext): String = "Go to Compose Resource"
