@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -16,7 +15,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
-import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.Consumer
 import dev.jordond.composeresourceskit.service.ComposeDetector
 import dev.jordond.composeresourceskit.service.ComposeResourcesService
@@ -158,10 +157,10 @@ private class ComposeResourcesStatusBarWidget(
 
         override fun actionPerformed(e: AnActionEvent) {
           ComposeDetector.getInstance(project).invalidateCache()
-          ApplicationManager
-            .getApplication()
-            .getServiceIfCreated(StatusBarWidgetsManager::class.java)
-            ?.updateAllWidgets()
+          WindowManager
+            .getInstance()
+            .getStatusBar(project)
+            ?.updateWidget(ComposeResourcesStatusBarWidgetFactory.WIDGET_ID)
         }
       },
     )

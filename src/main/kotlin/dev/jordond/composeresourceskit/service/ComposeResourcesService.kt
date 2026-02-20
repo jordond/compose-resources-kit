@@ -13,12 +13,12 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.Alarm
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
 import dev.jordond.composeresourceskit.settings
-import dev.jordond.composeresourceskit.settings.ComposeResourcesSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -29,6 +29,9 @@ class ComposeResourcesService(
 ) : Disposable {
   private val log = Logger.getInstance(ComposeResourcesService::class.java)
   private val runningModules = ConcurrentHashMap.newKeySet<String>()
+
+  @Volatile
+  private var disposed = false
 
   private val updateQueue = MergingUpdateQueue(
     name = "ComposeResourcesGeneration",
@@ -47,7 +50,7 @@ class ComposeResourcesService(
     private set
 
   fun runGenerateForAllModules() {
-    if (project.isDisposed) return
+    if (disposed || project.isDisposed) return
     val detector = ComposeDetector.getInstance(project)
     val pluginLog = PluginLogger.getInstance(project)
 
@@ -80,7 +83,7 @@ class ComposeResourcesService(
   }
 
   fun onFileChanged(filePath: String) {
-    if (project.isDisposed) return
+    if (disposed || project.isDisposed) return
     val pluginLog = PluginLogger.getInstance(project)
 
     if (!isWatchedResourcePath(filePath)) {
@@ -96,11 +99,7 @@ class ComposeResourcesService(
     val sourceSet = extractSourceSet(filePath)
 
     pluginLog.info(
-      "  Matched module=$modulePath sourceSet=$sourceSet — queuing task (debounce ${
-        ComposeResourcesSettings.getInstance(
-          project,
-        ).debounceMs
-      }ms)",
+      "  Matched module=$modulePath sourceSet=$sourceSet — queuing task (debounce ${project.settings.debounceMs}ms)",
     )
 
     if (status == Status.ERROR) {
@@ -186,6 +185,8 @@ class ComposeResourcesService(
     modulePath: String,
     sourceSet: String = "commonMain",
   ) {
+    if (disposed || project.isDisposed) return
+
     if (!runningModules.add(modulePath)) {
       log.info("Generation already running for: $modulePath, skipping")
       return
@@ -222,16 +223,19 @@ class ComposeResourcesService(
     val callback = object : TaskCallback {
       override fun onSuccess() {
         runningModules.remove(modulePath)
+        if (disposed || project.isDisposed) return
         updateStatus(if (runningModules.isEmpty()) Status.IDLE else Status.RUNNING)
         pluginLog.info("Gradle task completed: $taskName")
         log.info("Gradle task completed: $taskName")
         if (showNotifications) {
           notify("Resource accessors generated for ${modulePath.ifEmpty { "root" }}")
         }
+        refreshGeneratedSources(basePath, modulePath)
       }
 
       override fun onFailure() {
         runningModules.remove(modulePath)
+        if (disposed || project.isDisposed) return
         updateStatus(Status.ERROR)
         pluginLog.error("Gradle task failed: $taskName")
         log.warn("Gradle task failed: $taskName")
@@ -255,6 +259,7 @@ class ComposeResourcesService(
       log.info("Gradle task dispatched: $taskName")
     } catch (e: Exception) {
       runningModules.remove(modulePath)
+      if (disposed || project.isDisposed) return
       updateStatus(Status.ERROR)
       log.error("Failed to dispatch Gradle task: $taskName", e)
       pluginLog.error("Failed to dispatch Gradle task: $taskName — ${e.message}")
@@ -264,8 +269,24 @@ class ComposeResourcesService(
     }
   }
 
+  private fun refreshGeneratedSources(
+    basePath: String,
+    modulePath: String,
+  ) {
+    val moduleRelPath = modulePath.trimStart(':').replace(':', '/')
+    val moduleDir = if (moduleRelPath.isEmpty()) File(basePath) else File(basePath, moduleRelPath)
+    val generatedDir = File(moduleDir, "build/generated")
+
+    if (generatedDir.exists()) {
+      val pluginLog = PluginLogger.getInstance(project)
+      pluginLog.info("Refreshing VFS for generated sources: ${generatedDir.path}")
+      VfsUtil.markDirtyAndRefresh(true, true, true, generatedDir)
+    }
+  }
+
   private fun updateStatus(newStatus: Status) {
     status = newStatus
+    if (disposed || project.isDisposed) return
     WindowManager
       .getInstance()
       .getStatusBar(project)
@@ -284,6 +305,7 @@ class ComposeResourcesService(
   }
 
   override fun dispose() {
+    disposed = true
     runningModules.clear()
   }
 

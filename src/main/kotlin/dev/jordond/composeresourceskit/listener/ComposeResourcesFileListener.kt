@@ -22,19 +22,15 @@ class ComposeResourcesFileListener(
     val relevantEvents = events.filter { it.isRelevantEvent() }
     if (relevantEvents.isEmpty()) return
 
-    val log = PluginLogger.getInstance(project)
-
-    if (!project.settings.enabled) {
-      log.warn("Plugin disabled — ignoring ${relevantEvents.size} event(s)")
-      return
-    }
+    if (!project.settings.enabled) return
 
     val basePath = project.basePath ?: return
+    val log = PluginLogger.getInstance(project)
     val service = ComposeResourcesService.getInstance(project)
-
     val changeListManager = ChangeListManager.getInstance(project)
 
     for (event in relevantEvents) {
+      if (project.isDisposed) return
       val path = event.path
       if (!path.startsWith(basePath)) continue
 
