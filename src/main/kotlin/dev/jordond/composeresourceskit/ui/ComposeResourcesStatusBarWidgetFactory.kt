@@ -93,7 +93,7 @@ private class ComposeResourcesStatusBarWidget(
         }
       }
       val popup = JBPopupFactory.getInstance().createActionGroupPopup(
-        null,
+        "Compose Resources Kit",
         group,
         dataContext,
         JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
