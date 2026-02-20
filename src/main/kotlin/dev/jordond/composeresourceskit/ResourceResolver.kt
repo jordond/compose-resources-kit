@@ -1,7 +1,13 @@
 package dev.jordond.composeresourceskit
 
 import com.intellij.ide.highlighter.XmlFileType
+import com.intellij.model.psi.PsiSymbolDeclaration
+import com.intellij.model.psi.PsiSymbolReference
+import com.intellij.navigation.ItemPresentation
+import com.intellij.navigation.NavigationItem
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
@@ -10,6 +16,8 @@ import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.PsiSearchHelper
 import com.intellij.psi.search.UsageSearchContext
+import com.intellij.psi.xml.XmlAttribute
+import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.psi.xml.XmlFile
 import com.intellij.psi.xml.XmlTag
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
@@ -96,17 +104,20 @@ object ResourceResolver {
   }
 
   fun resolveResourceFromXml(element: PsiElement): ResourceReference? {
-    val tag = generateSequence(element) { it.parent }
-      .filterIsInstance<XmlTag>()
+    val attributeValue = generateSequence(element) { it.parent }
+      .filterIsInstance<XmlAttributeValue>()
       .firstOrNull() ?: return null
 
+    val attribute = attributeValue.parent as? XmlAttribute ?: return null
+    if (attribute.name != "name") return null
+
+    val tag = attribute.parent
+    if (tag !is XmlTag) return null
     if (tag.name !in XML_TAG_TO_RES_PREFIX) return null
     if (tag.containingFile?.virtualFile?.isInComposeResources() != true) return null
 
     val name = tag.getAttributeValue("name") ?: return null
-    return XML_TAG_TO_RES_PREFIX[tag.name]?.let { prefix ->
-      ResourceReference.XmlResource(name, tag.name)
-    }
+    return ResourceReference.XmlResource(name, tag.name)
   }
 
   fun findXmlResources(
@@ -205,18 +216,17 @@ object ResourceResolver {
  * Displays the full resource expression (e.g. Res.string.app_name) and includes the file name
  * alongside the module name in the location string.
  */
-private class ResourceUsageTarget(
+@Suppress("UnstableApiUsage")
+private data class ResourceUsageTarget(
   val element: PsiElement,
 ) : PsiElement by element,
-  com.intellij.navigation.NavigationItem {
-  override fun getPresentation(): com.intellij.navigation.ItemPresentation {
-    return object : com.intellij.navigation.ItemPresentation {
+  NavigationItem {
+  override fun getPresentation(): ItemPresentation {
+    return object : ItemPresentation {
       override fun getPresentableText(): String = element.text
 
       override fun getLocationString(): String {
-        val module = com.intellij.openapi.module.ModuleUtilCore
-          .findModuleForPsiElement(element)
-          ?.name
+        val module = ModuleUtilCore.findModuleForPsiElement(element)?.name
         val fileName = element.containingFile?.name ?: ""
         return if (module != null) "[$module] $fileName" else fileName
       }
@@ -225,21 +235,17 @@ private class ResourceUsageTarget(
     }
   }
 
+  override fun getTextRangeInParent(): TextRange = element.textRangeInParent
+
   override fun getNavigationElement(): PsiElement = element
 
   override fun getOriginalElement(): PsiElement = element.originalElement
 
-  override fun getName(): String? = (element as? com.intellij.navigation.NavigationItem)?.name
+  override fun getOwnDeclarations(): Collection<PsiSymbolDeclaration> = element.ownDeclarations
 
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    val otherElement = (other as? ResourceUsageTarget)?.element ?: other
-    return element == otherElement
-  }
+  override fun getOwnReferences(): Collection<PsiSymbolReference> = element.ownReferences
 
-  override fun hashCode(): Int = element.hashCode()
-
-  override fun toString(): String = "ResourceUsageTarget($element)"
+  override fun getName(): String? = (element as? NavigationItem)?.name
 }
 
 internal fun VirtualFile.isInComposeResources(): Boolean {

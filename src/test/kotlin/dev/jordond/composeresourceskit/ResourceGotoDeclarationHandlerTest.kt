@@ -253,4 +253,19 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     assertTrue(targets.any { it.containingFile.name == "Main.kt" })
     assertTrue(targets.any { it.containingFile.name == "Other.kt" })
   }
+
+  fun testDoesNotNavigateFromXmlValue() {
+    addComposeResource("values/strings.xml", stringsXml)
+    val file = myFixture.findFileInTempDir("composeResources/values/strings.xml")!!
+    myFixture.configureFromExistingVirtualFile(file)
+
+    // Find the 'My App' value text
+    val text = myFixture.editor.document.text
+    val offset = text.indexOf("My App")
+    val element = myFixture.file.findElementAt(offset)!!
+
+    val targets = handler.getGotoDeclarationTargets(element, offset, myFixture.editor)
+
+    assertNull(targets)
+  }
 }

@@ -43,7 +43,7 @@ them safely.
 Currently supports:
 
 - `string`
-- `plural`
+- `plurals`
 - `string-array`
 
 ### Resource Navigation
