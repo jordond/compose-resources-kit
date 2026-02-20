@@ -4,10 +4,11 @@
     <vendor url="https://jordond.dev">jordond</vendor>
 
     <description><![CDATA[
-        <p>Automatically regenerates <b>Compose Multiplatform</b> resource accessors when files in
-        <code>composeResources</code> directories change. No more manually running
-        <code>generateResourceAccessorsForCommonMain</code> after editing strings, drawables, or
-        other resource files.</p>
+        <p>Ever add a string to your <code>strings.xml</code>, switch back to your Kotlin file, and
+        get <b>Unresolved reference</b>? This plugin fixes that. It watches your
+        <code>composeResources</code> directories and automatically runs
+        <code>generateResourceAccessors</code> whenever a file changes. Make an edit, wait a couple
+        seconds, and the accessors are there &mdash; Compose Previews re-render and everything.</p>
 
         <p>Multi-module and source-set aware. Includes a status bar widget with quick actions.
         Configure under <b>Settings &gt; Tools &gt; Compose Resources Kit</b>.</p>

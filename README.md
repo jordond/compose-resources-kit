@@ -1,6 +1,19 @@
+<div align="center">
+
+<img src="src/main/resources/META-INF/pluginIcon.svg" width="84" alt="Compose Resources Kit icon"/>
+
 # Compose Resources Kit
 
-Ever had this problem?
+**Automatic resource accessor generation for Compose Multiplatform**
+
+[![Version](https://img.shields.io/github/v/release/jordond/compose-resources-kit?label=Version&logo=github)](https://github.com/jordond/compose-resources-kit/releases)
+[![Marketplace](https://img.shields.io/jetbrains/plugin/v/30280-compose-resources-kit?label=Marketplace&logo=jetbrains)](https://plugins.jetbrains.com/plugin/30280-compose-resources-kit)
+[![CI](https://img.shields.io/github/actions/workflow/status/jordond/compose-resources-kit/ci.yml?label=CI&logo=github)](https://github.com/jordond/compose-resources-kit/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/jordond/compose-resources-kit)](LICENSE.md)
+
+</div>
+
+### Ever had this problem?
 
 You add a string to your `strings.xml`, switch back to your Kotlin file, try to use it, and get
 `Unresolved reference 'new_string'`. So you manually trigger a build, wait for it to finish, and
@@ -17,22 +30,31 @@ accessors are there — Compose Previews re-render and everything.
 - Status bar widget with quick actions
 - Configurable via **Settings > Tools > Compose Resources Kit**
 
-## Installation
+## Getting Started
 
-Install from the [JetBrains Marketplace](https://plugins.jetbrains.com) or from
-**Settings > Plugins > Marketplace** and search for **Compose Resources Kit**.
+1. Install the plugin from the
+   [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/30280-compose-resources-kit) or
+   from **Settings > Plugins > Marketplace** and search for **Compose Resources Kit**.
+2. Open a project that uses the `org.jetbrains.compose` Gradle plugin. The plugin will
+   automatically detect it.
+3. Look for the **Compose Resources Kit** widget in the bottom status bar — it should show
+   **Watching**.
+4. Edit any file in a `composeResources` directory (e.g. add a string to `strings.xml`). Resource
+   accessors will regenerate automatically after a short delay.
+5. (Optional) Adjust settings under **Settings > Tools > Compose Resources Kit** — debounce delay,
+   notifications, and custom resource directories.
 
 ## Settings
 
 **Settings > Tools > Compose Resources Kit**
 
-| Setting                     | Default | Description                                                          |
-|-----------------------------|---------|----------------------------------------------------------------------|
-| Enable automatic generation | On      | Toggle the file watcher on/off                                       |
+| Setting                     | Default | Description                                                           |
+|-----------------------------|---------|-----------------------------------------------------------------------|
+| Enable automatic generation | On      | Toggle the file watcher on/off                                        |
 | Debounce delay (ms)         | 2000    | How long to wait after the last file change before running generation |
-| Show notifications          | Off     | Display balloon notifications on generation success/failure          |
-| Enable logging              | Off     | Show a diagnostics log panel in the settings page                    |
-| Custom resource directories | —       | Additional directory names to watch (e.g. `desktopResources`)        |
+| Show notifications          | Off     | Display balloon notifications on generation success/failure           |
+| Enable logging              | Off     | Show a diagnostics log panel in the settings page                     |
+| Custom resource directories | —       | Additional directory names to watch (e.g. `desktopResources`)         |
 
 ## Status Bar
 
