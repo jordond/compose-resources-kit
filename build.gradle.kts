@@ -25,6 +25,8 @@ dependencies {
     bundledPlugin("com.intellij.gradle")
     bundledPlugin("org.jetbrains.kotlin")
   }
+
+  testImplementation("junit:junit:4.13.2")
 }
 
 intellijPlatform {
