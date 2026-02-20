@@ -1,6 +1,7 @@
 package dev.jordond.composeresourceskit.ui
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -131,6 +132,8 @@ private class ComposeResourcesStatusBarWidget(
         override fun actionPerformed(e: AnActionEvent) {
           ComposeResourcesService.getInstance(project).runGenerateForAllModules()
         }
+
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
         override fun update(e: AnActionEvent) {
           e.presentation.isEnabled = settings.enabled
