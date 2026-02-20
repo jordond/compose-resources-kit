@@ -22,5 +22,5 @@ class ResourceGotoDeclarationHandler : GotoDeclarationHandler {
     return targets.takeIf { it.isNotEmpty() }?.toTypedArray()
   }
 
-  override fun getActionText(context: DataContext): String = "Go to Compose Resource"
+  override fun getActionText(context: DataContext): String = ComposeResourcesBundle.message("goto.action.text")
 }
