@@ -225,6 +225,35 @@ class UnusedComposeResourceInspectionTest : BasePlatformTestCase() {
     assertTrue(unusedWarnings[0].description!!.contains("unused_one"))
   }
 
+  fun testSimilarNamesConflictReproduction() {
+    addComposeResource(
+      "values/strings.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string name="home">Home</string>
+          <string name="home_action">Home Action</string>
+      </resources>
+      """.trimIndent(),
+    )
+
+    // Using home_action should NOT count as using home
+    myFixture.addFileToProject("src/Main.kt", "val x = Res.string.home_action")
+
+    val file = myFixture.findFileInTempDir("composeResources/values/strings.xml")!!
+    myFixture.configureFromExistingVirtualFile(file)
+
+    val highlights = myFixture.doHighlighting()
+    val unusedWarnings = highlights.filter {
+      it.description?.contains("Unused Compose resource") == true
+    }
+
+    // Bug: current implementation will see "Res.string.home_action" and think "Res.string.home" is used.
+    // So unusedWarnings will be empty or not contain "home".
+    val homeWarning = unusedWarnings.find { it.description!!.contains("'home'") }
+    assertNotNull("Resource 'home' should be flagged as unused even if 'home_action' is used", homeWarning)
+  }
+
   // -- Quick fix --
 
   fun testQuickFixRemovesTag() {

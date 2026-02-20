@@ -7,15 +7,14 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElementVisitor
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
 import com.intellij.psi.XmlElementVisitor
-import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.PsiSearchHelper
+import com.intellij.psi.search.UsageSearchContext
 import com.intellij.psi.xml.XmlTag
 import dev.jordond.composeresourceskit.XML_TAG_TO_RES_PREFIX
 import dev.jordond.composeresourceskit.isInComposeResources
-import org.jetbrains.kotlin.idea.KotlinFileType
+import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 
 class UnusedComposeResourceInspection : LocalInspectionTool() {
   override fun getDisplayName(): String = "Unused Compose resource"
@@ -67,14 +66,29 @@ class UnusedComposeResourceInspection : LocalInspectionTool() {
   ): Boolean {
     val fullRef = "$resPrefix$resourceName"
     val scope = GlobalSearchScope.projectScope(project)
-    val psiManager = PsiManager.getInstance(project)
+    val searchHelper = PsiSearchHelper.getInstance(project)
 
-    return FileTypeIndex
-      .getFiles(KotlinFileType.INSTANCE, scope)
-      .any { vf ->
-        val psiFile: PsiFile? = psiManager.findFile(vf)
-        psiFile?.text?.contains(fullRef) == true
-      }
+    var found = false
+    searchHelper.processElementsWithWord(
+      { element, _ ->
+        if (element is KtSimpleNameExpression && element.text == resourceName) {
+          val parent = element.parent
+          if (parent != null && parent.text.startsWith(resPrefix)) {
+            if (parent.text == fullRef) {
+              found = true
+              return@processElementsWithWord false // Stop searching
+            }
+          }
+        }
+        true
+      },
+      scope,
+      resourceName,
+      UsageSearchContext.IN_CODE,
+      true,
+    )
+
+    return found
   }
 }
 

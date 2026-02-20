@@ -223,4 +223,41 @@ class ComposeResourceDocumentationProviderTest : BasePlatformTestCase() {
 
     assertNull(provider.generateDoc(element, element))
   }
+
+  fun testTruncatesLongValues() {
+    val longValue = "A".repeat(200)
+    addComposeResource(
+      "values/strings.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string name="long_string">$longValue</string>
+      </resources>
+      """.trimIndent(),
+    )
+    configureKotlin("val x = Res.string.<caret>long_string")
+    val element = elementAtCaret()!!
+
+    val info = provider.getQuickNavigateInfo(element, element)
+    assertNotNull(info)
+    assertTrue("Info should be truncated with ellipsis", info!!.contains("..."))
+    assertTrue("Info should be shorter than the original value", info.length < 200)
+  }
+
+  fun testIgnoresResourcesInBuildFolder() {
+    // Add a resource in a "build" directory which should be ignored by the robust path check
+    myFixture.addFileToProject(
+      "build/composeResources/values/strings.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string name="build_resource">In Build</string>
+      </resources>
+      """.trimIndent(),
+    )
+    configureKotlin("val x = Res.string.<caret>build_resource")
+    val element = elementAtCaret()!!
+
+    assertNull("Should not resolve resources inside 'build' folder", provider.getQuickNavigateInfo(element, element))
+  }
 }

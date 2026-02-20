@@ -131,6 +131,16 @@ object ResourceResolver {
 }
 
 internal fun VirtualFile.isInComposeResources(): Boolean {
-  val path = this.path
-  return path.contains("/composeResources/") && !path.contains("/build/")
+  var current: VirtualFile? = this
+  var inComposeResources = false
+  while (current != null) {
+    if (current.name == "composeResources") {
+      inComposeResources = true
+    }
+    if (current.name == "build") {
+      return false
+    }
+    current = current.parent
+  }
+  return inComposeResources
 }

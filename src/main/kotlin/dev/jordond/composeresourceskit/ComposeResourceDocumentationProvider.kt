@@ -134,8 +134,8 @@ class ComposeResourceDocumentationProvider : AbstractDocumentationProvider() {
   private fun extractDisplayValue(
     tag: XmlTag,
     ref: ResourceReference.XmlResource,
-  ): String =
-    when (ref.xmlTag) {
+  ): String {
+    val value = when (ref.xmlTag) {
       "string" -> tag.value.text
       "string-array" -> {
         val items = tag.findSubTags("item")
@@ -150,6 +150,8 @@ class ComposeResourceDocumentationProvider : AbstractDocumentationProvider() {
       }
       else -> tag.value.text
     }
+    return StringUtil.shortenTextWithEllipsis(value, 120, 0)
+  }
 
   private fun StringBuilder.appendSection(
     header: String,
