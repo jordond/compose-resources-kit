@@ -36,6 +36,18 @@
             implementation="dev.jordond.composeresourceskit.ComposeResourcesStartupActivity"/>
 
         <gotoDeclarationHandler implementation="dev.jordond.composeresourceskit.ResourceGotoDeclarationHandler"/>
+
+        <lang.documentationProvider
+            language="kotlin"
+            implementationClass="dev.jordond.composeresourceskit.ComposeResourceDocumentationProvider"/>
+
+        <localInspection
+            language="XML"
+            implementationClass="dev.jordond.composeresourceskit.inspection.UnusedComposeResourceInspection"
+            displayName="Unused Compose resource"
+            groupName="Compose Resources Kit"
+            enabledByDefault="true"
+            level="WARNING"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
