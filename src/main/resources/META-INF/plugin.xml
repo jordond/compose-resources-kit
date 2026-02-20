@@ -4,7 +4,7 @@
     <vendor url="https://jordond.dev">jordond</vendor>
 
     <description><![CDATA[
-        <p>A collection of tools for working with Compose Multiplatform resources. It simplifies your development workflow by automating resource accessor generation, resource navigation, and management.</p>
+        <p>A collection of tools for working with Compose Multiplatform resources. Automated resource accessor generation, resource navigation, and management.</p>
 
         <h3>Features</h3>
         <ul>

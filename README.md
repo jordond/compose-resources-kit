@@ -4,8 +4,8 @@
 
 # Compose Resources Kit
 
-A collection of tools for working with Compose Multiplatform resources. It simplifies your development workflow by
-automating resource accessor generation, resource navigation, and management.
+A collection of tools for working with Compose Multiplatform resources. Automated resource accessor generation, resource
+navigation, and management.
 
 [![Version](https://img.shields.io/github/v/release/jordond/compose-resources-kit?label=Version&logo=github)](https://github.com/jordond/compose-resources-kit/releases)
 [![Marketplace](https://img.shields.io/jetbrains/plugin/v/30280-compose-resources-kit?label=Marketplace&logo=jetbrains)](https://plugins.jetbrains.com/plugin/30280-compose-resources-kit)
