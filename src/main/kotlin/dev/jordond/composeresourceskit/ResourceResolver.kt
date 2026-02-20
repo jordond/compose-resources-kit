@@ -130,10 +130,7 @@ object ResourceResolver {
   }
 }
 
-private const val COMPOSE_RESOURCES_DIR = "composeResources"
-
 internal fun VirtualFile.isInComposeResources(): Boolean {
   val path = this.path
-  return path.contains("/$COMPOSE_RESOURCES_DIR/") &&
-    !path.contains("/build/")
+  return path.contains("/composeResources/") && !path.contains("/build/")
 }

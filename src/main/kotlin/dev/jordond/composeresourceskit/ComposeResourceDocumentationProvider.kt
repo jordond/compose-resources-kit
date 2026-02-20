@@ -52,13 +52,13 @@ class ComposeResourceDocumentationProvider : AbstractDocumentationProvider() {
 
     // Definition header
     val typeLabel = when (ref.xmlTag) {
-      "string" -> ComposeResourcesBundle.message("documentation.type.string")
-      "string-array" -> ComposeResourcesBundle.message("documentation.type.string.array")
-      "plurals" -> ComposeResourcesBundle.message("documentation.type.plurals")
+      "string" -> "String"
+      "string-array" -> "String Array"
+      "plurals" -> "Plurals"
       else -> ref.xmlTag
     }
     sb.append(DocumentationMarkup.DEFINITION_START)
-    sb.append("$typeLabel ${ComposeResourcesBundle.message("documentation.resource.label")}: <b>${escape(ref.key)}</b>")
+    sb.append("$typeLabel Resource: <b>${escape(ref.key)}</b>")
     sb.append(DocumentationMarkup.DEFINITION_END)
 
     // Content: primary value
@@ -105,19 +105,12 @@ class ComposeResourceDocumentationProvider : AbstractDocumentationProvider() {
 
     if (localeEntries.size == 1) {
       val (locale, fileName) = localeEntries.first()
-      sb.appendSection(ComposeResourcesBundle.message("documentation.section.file"), fileName)
+      sb.appendSection("File", fileName)
       if (locale != "default") {
-        sb.appendSection(ComposeResourcesBundle.message("documentation.section.locale"), locale)
+        sb.appendSection("Locale", locale)
       }
     } else if (localeEntries.size > 1) {
-      sb.appendSection(
-        ComposeResourcesBundle.message(
-          "documentation.section.locales",
-        ),
-        localeEntries.joinToString(", ") {
-          it.first
-        },
-      )
+      sb.appendSection("Locales", localeEntries.joinToString(", ") { it.first })
 
       // Show values per locale for strings
       if (ref.xmlTag == "string" && tags.size > 1) {
@@ -130,7 +123,7 @@ class ComposeResourceDocumentationProvider : AbstractDocumentationProvider() {
         val valuesHtml = localeValues.joinToString("<br>") { (locale, value) ->
           "<code>$locale</code>: ${escape(value)}"
         }
-        sb.appendSection(ComposeResourcesBundle.message("documentation.section.translations"), valuesHtml)
+        sb.appendSection("Translations", valuesHtml)
       }
     }
 

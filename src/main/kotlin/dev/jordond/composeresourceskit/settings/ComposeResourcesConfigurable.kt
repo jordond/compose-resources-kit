@@ -13,7 +13,6 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.layout.selected
-import dev.jordond.composeresourceskit.ComposeResourcesBundle
 import dev.jordond.composeresourceskit.service.ComposeDetector
 import dev.jordond.composeresourceskit.service.ComposeResourcesService
 import dev.jordond.composeresourceskit.service.PluginLogger
@@ -43,7 +42,7 @@ class ComposeResourcesConfigurable(
 
   private val settings get() = project.settings
 
-  override fun getDisplayName(): String = ComposeResourcesBundle.message("plugin.name")
+  override fun getDisplayName(): String = "Compose Resources Kit"
 
   override fun createComponent(): JComponent {
     val listModel = DefaultListModel<String>()
@@ -57,8 +56,8 @@ class ComposeResourcesConfigurable(
       .setAddAction {
         val input = com.intellij.openapi.ui.Messages.showInputDialog(
           project,
-          ComposeResourcesBundle.message("settings.paths.add.message"),
-          ComposeResourcesBundle.message("settings.paths.add.title"),
+          "Enter the resource directory name (e.g., desktopResources):",
+          "Add Custom Resource Directory",
           null,
         )
         if (!input.isNullOrBlank()) {
@@ -66,8 +65,8 @@ class ComposeResourcesConfigurable(
           if (trimmed.contains('/') || trimmed.contains('\\') || trimmed.contains("..")) {
             com.intellij.openapi.ui.Messages.showErrorDialog(
               project,
-              ComposeResourcesBundle.message("settings.paths.add.error.message"),
-              ComposeResourcesBundle.message("settings.paths.add.error.title"),
+              "Please enter a simple directory name without path separators.",
+              "Invalid Input",
             )
           } else {
             listModel.addElement(trimmed)
@@ -106,7 +105,7 @@ class ComposeResourcesConfigurable(
       preferredSize = java.awt.Dimension(600, 200)
     }
 
-    val refreshDetectionButton = JButton(ComposeResourcesBundle.message("settings.button.refresh")).apply {
+    val refreshDetectionButton = JButton("Refresh Detection").apply {
       addActionListener {
         ComposeDetector.getInstance(project).invalidateCache()
         pluginLog.info("--- Detection cache cleared by user ---")
@@ -115,53 +114,64 @@ class ComposeResourcesConfigurable(
       }
     }
 
-    val clearLogsButton = JButton(ComposeResourcesBundle.message("settings.button.clear.logs")).apply {
+    val clearLogsButton = JButton("Clear Logs").apply {
       addActionListener {
         pluginLog.clear()
       }
     }
 
     return panel {
-      group(ComposeResourcesBundle.message("settings.group.general")) {
+      group("General") {
         row {
-          enabledCheckBox = checkBox(ComposeResourcesBundle.message("settings.enabled"))
+          enabledCheckBox = checkBox("Enable automatic resource accessor generation")
             .applyToComponent { isSelected = settings.enabled }
             .component
         }
-        row(ComposeResourcesBundle.message("settings.debounce.label")) {
+        row("Debounce delay (ms):") {
           debounceSpinner = spinner(500..10000, 100)
             .applyToComponent { value = settings.debounceMs }
             .component
         }
         row {
-          notificationsCheckBox = checkBox(ComposeResourcesBundle.message("settings.notifications"))
+          notificationsCheckBox = checkBox("Show notifications when generation runs")
             .applyToComponent { isSelected = settings.showNotifications }
             .component
         }
         row {
-          loggingCheckBox = checkBox(ComposeResourcesBundle.message("settings.logging"))
+          loggingCheckBox = checkBox("Enable logging")
             .applyToComponent { isSelected = settings.loggingEnabled }
             .component
         }
       }
-      group(ComposeResourcesBundle.message("settings.group.custom.paths")) {
+      group("Custom Resource Directories") {
         row {
-          comment(ComposeResourcesBundle.message("settings.paths.description"))
+          comment(
+            "Add directory names used with compose.resources { customDirectory(...) }. " +
+              "For example, if your config uses directoryProvider for 'desktopResources', " +
+              "add 'desktopResources' here.",
+          )
         }
         row {
           cell(pathsPanel)
             .align(Align.FILL)
         }
       }
-      group(ComposeResourcesBundle.message("settings.group.info")) {
+      group("Info") {
         row {
-          comment(ComposeResourcesBundle.message("settings.info.description"))
+          comment(
+            "Watches for changes in composeResources directories (and any custom directories above) " +
+              "then automatically runs the Gradle generateResourceAccessors task for the affected module. " +
+              "The plugin only activates for projects using the org.jetbrains.compose Gradle plugin.",
+          )
         }
       }
-      group(ComposeResourcesBundle.message("settings.group.diagnostics")) {
+      group("Diagnostics") {
         visibleIf(loggingCheckBox!!.selected)
         row {
-          comment(ComposeResourcesBundle.message("settings.diagnostics.description"))
+          comment(
+            "Live log of plugin activity. Edit a file in your composeResources directory " +
+              "and watch for entries here. If the project is not detected, click 'Refresh Detection'.",
+          )
         }
         row {
           cell(scrollPane).align(Align.FILL)

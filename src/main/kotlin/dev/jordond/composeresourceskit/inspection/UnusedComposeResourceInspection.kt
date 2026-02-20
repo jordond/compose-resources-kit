@@ -13,15 +13,14 @@ import com.intellij.psi.XmlElementVisitor
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.xml.XmlTag
-import dev.jordond.composeresourceskit.ComposeResourcesBundle
 import dev.jordond.composeresourceskit.XML_TAG_TO_RES_PREFIX
 import dev.jordond.composeresourceskit.isInComposeResources
 import org.jetbrains.kotlin.idea.KotlinFileType
 
 class UnusedComposeResourceInspection : LocalInspectionTool() {
-  override fun getDisplayName(): String = ComposeResourcesBundle.message("inspection.unused.resource.display.name")
+  override fun getDisplayName(): String = "Unused Compose resource"
 
-  override fun getGroupDisplayName(): String = ComposeResourcesBundle.message("plugin.name")
+  override fun getGroupDisplayName(): String = "Compose Resources Kit"
 
   override fun getShortName(): String = "UnusedComposeResource"
 
@@ -42,7 +41,7 @@ class UnusedComposeResourceInspection : LocalInspectionTool() {
           val nameAttr = tag.getAttribute("name")?.valueElement ?: tag
           holder.registerProblem(
             nameAttr,
-            ComposeResourcesBundle.message("inspection.unused.resource.description", name),
+            "Unused Compose resource '$name'",
             ProblemHighlightType.LIKE_UNUSED_SYMBOL,
             RemoveResourceQuickFix(),
           )
@@ -80,7 +79,7 @@ class UnusedComposeResourceInspection : LocalInspectionTool() {
 }
 
 private class RemoveResourceQuickFix : LocalQuickFix {
-  override fun getName(): String = ComposeResourcesBundle.message("inspection.unused.resource.fix")
+  override fun getName(): String = "Remove unused resource"
 
   override fun getFamilyName(): String = name
 

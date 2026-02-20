@@ -19,7 +19,6 @@ import com.intellij.util.Alarm
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
 import dev.jordond.composeresourceskit.settings
-import dev.jordond.composeresourceskit.ui.ComposeResourcesStatusBarWidgetFactory
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -291,7 +290,7 @@ class ComposeResourcesService(
     WindowManager
       .getInstance()
       .getStatusBar(project)
-      ?.updateWidget(ComposeResourcesStatusBarWidgetFactory.WIDGET_ID)
+      ?.updateWidget("ComposeResourcesWidget")
   }
 
   private fun notify(
@@ -300,7 +299,7 @@ class ComposeResourcesService(
   ) {
     NotificationGroupManager
       .getInstance()
-      .getNotificationGroup(NOTIFICATION_GROUP_ID)
+      .getNotificationGroup("Compose Resources Kit")
       .createNotification(content, type)
       .notify(project)
   }
@@ -311,7 +310,6 @@ class ComposeResourcesService(
   }
 
   companion object {
-    private const val NOTIFICATION_GROUP_ID = "Compose Resources Kit"
     private val SOURCE_SET_PATTERN = Regex("/src/([^/]+)/composeResources")
 
     fun getInstance(project: Project): ComposeResourcesService = project.getService(ComposeResourcesService::class.java)

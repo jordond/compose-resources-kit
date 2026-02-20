@@ -17,7 +17,6 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.Consumer
-import dev.jordond.composeresourceskit.ComposeResourcesBundle
 import dev.jordond.composeresourceskit.service.ComposeDetector
 import dev.jordond.composeresourceskit.service.ComposeResourcesService
 import dev.jordond.composeresourceskit.settings.ComposeResourcesConfigurable
@@ -28,7 +27,7 @@ import javax.swing.Icon
 class ComposeResourcesStatusBarWidgetFactory : StatusBarWidgetFactory {
   override fun getId(): String = WIDGET_ID
 
-  override fun getDisplayName(): String = ComposeResourcesBundle.message("plugin.name")
+  override fun getDisplayName(): String = "Compose Resources Kit"
 
   override fun isAvailable(project: Project): Boolean =
     ComposeDetector.getInstance(project).isComposeMultiplatformProject()
@@ -40,7 +39,7 @@ class ComposeResourcesStatusBarWidgetFactory : StatusBarWidgetFactory {
   }
 
   companion object {
-    const val WIDGET_ID: String = "ComposeResourcesWidget"
+    const val WIDGET_ID = "ComposeResourcesWidget"
   }
 }
 
@@ -75,11 +74,11 @@ private class ComposeResourcesStatusBarWidget(
 
   override fun getTooltipText(): String {
     val settings = ComposeResourcesSettings.getInstance(project)
-    if (!settings.enabled) return ComposeResourcesBundle.message("widget.tooltip.disabled")
+    if (!settings.enabled) return "Compose Resources Kit: Disabled"
     return when (ComposeResourcesService.getInstance(project).status) {
-      ComposeResourcesService.Status.IDLE -> ComposeResourcesBundle.message("widget.tooltip.watching")
-      ComposeResourcesService.Status.RUNNING -> ComposeResourcesBundle.message("widget.tooltip.generating")
-      ComposeResourcesService.Status.ERROR -> ComposeResourcesBundle.message("widget.tooltip.error")
+      ComposeResourcesService.Status.IDLE -> "Compose Resources Kit: Watching"
+      ComposeResourcesService.Status.RUNNING -> "Compose Resources Kit: Generating..."
+      ComposeResourcesService.Status.ERROR -> "Compose Resources Kit: Error"
     }
   }
 
@@ -94,7 +93,7 @@ private class ComposeResourcesStatusBarWidget(
         }
       }
       val popup = JBPopupFactory.getInstance().createActionGroupPopup(
-        ComposeResourcesBundle.message("plugin.name"),
+        "Compose Resources Kit",
         group,
         dataContext,
         JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
@@ -107,18 +106,10 @@ private class ComposeResourcesStatusBarWidget(
     val settings = ComposeResourcesSettings.getInstance(project)
     val group = DefaultActionGroup()
 
-    val toggleText = if (settings.enabled) {
-      ComposeResourcesBundle.message("action.toggle.disable")
-    } else {
-      ComposeResourcesBundle.message("action.toggle.enable")
-    }
+    val toggleText = if (settings.enabled) "Disable" else "Enable"
     val toggleIcon = if (settings.enabled) AllIcons.Actions.Suspend else AllIcons.Actions.Resume
     group.add(
-      object : AnAction(
-        toggleText,
-        ComposeResourcesBundle.message("action.toggle.description"),
-        toggleIcon,
-      ) {
+      object : AnAction(toggleText, "Toggle automatic resource generation", toggleIcon) {
         override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
         override fun actionPerformed(e: AnActionEvent) {
@@ -138,8 +129,8 @@ private class ComposeResourcesStatusBarWidget(
 
     group.add(
       object : AnAction(
-        ComposeResourcesBundle.message("action.generate.text"),
-        ComposeResourcesBundle.message("action.generate.description"),
+        "Generate Now",
+        "Run resource accessor generation for all Compose modules",
         AllIcons.Actions.Refresh,
       ) {
         override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
@@ -158,8 +149,8 @@ private class ComposeResourcesStatusBarWidget(
 
     group.add(
       object : AnAction(
-        ComposeResourcesBundle.message("action.refresh.text"),
-        ComposeResourcesBundle.message("action.refresh.description"),
+        "Refresh Detection",
+        "Redetect Compose multiplatform modules",
         AllIcons.Actions.ForceRefresh,
       ) {
         override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
@@ -175,11 +166,7 @@ private class ComposeResourcesStatusBarWidget(
     )
 
     group.add(
-      object : AnAction(
-        ComposeResourcesBundle.message("action.settings.text"),
-        ComposeResourcesBundle.message("action.settings.description"),
-        AllIcons.General.Settings,
-      ) {
+      object : AnAction("Settings...", "Open compose resources kit settings", AllIcons.General.Settings) {
         override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
         override fun actionPerformed(e: AnActionEvent) {
