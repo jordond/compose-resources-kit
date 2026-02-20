@@ -39,7 +39,7 @@ class ComposeResourcesFileListener(
       if (!path.startsWith(basePath)) continue
 
       val file = event.file
-      if (file != null && file.isValid && changeListManager.isIgnoredFile(file)) continue
+      if (file != null && changeListManager.isIgnoredFile(file)) continue
 
       val eventType = event.javaClass.simpleName
         .removePrefix("VFile")

@@ -61,7 +61,16 @@ class ComposeResourcesConfigurable(
           null,
         )
         if (!input.isNullOrBlank()) {
-          listModel.addElement(input.trim())
+          val trimmed = input.trim()
+          if (trimmed.contains('/') || trimmed.contains('\\') || trimmed.contains("..")) {
+            com.intellij.openapi.ui.Messages.showErrorDialog(
+              project,
+              "Please enter a simple directory name without path separators.",
+              "Invalid Input",
+            )
+          } else {
+            listModel.addElement(trimmed)
+          }
         }
       }.setRemoveAction {
         val selected = pathsList.selectedIndex
@@ -83,7 +92,9 @@ class ComposeResourcesConfigurable(
     val pluginLog = PluginLogger.getInstance(project)
     val listener: () -> Unit = {
       ApplicationManager.getApplication().invokeLater {
-        refreshLogText(textArea, pluginLog)
+        if (textArea.isShowing) {
+          refreshLogText(textArea, pluginLog)
+        }
       }
     }
     logListener = listener
@@ -215,11 +226,13 @@ class ComposeResourcesConfigurable(
       ComposeResourcesSettings.State(
         enabled = enabledCheckBox?.isSelected ?: true,
         debounceMs = (debounceSpinner?.value as? Int) ?: 2000,
-        showNotifications = notificationsCheckBox?.isSelected ?: true,
+        showNotifications = notificationsCheckBox?.isSelected ?: false,
         loggingEnabled = loggingCheckBox?.isSelected ?: false,
         additionalResourcePaths = paths,
       ),
     )
+
+    ComposeResourcesService.getInstance(project).onSettingsChanged()
   }
 
   override fun reset() {

@@ -52,8 +52,8 @@ class PluginLogger(
     if (!project.settings.loggingEnabled) return
     val entry = Entry(LocalTime.now().format(formatter), level, message)
     entries.add(entry)
-    if (entries.size > MAX_ENTRIES) {
-      entries.subList(0, entries.size - MAX_ENTRIES).clear()
+    while (entries.size > MAX_ENTRIES) {
+      entries.removeAt(0)
     }
     notifyListeners()
   }

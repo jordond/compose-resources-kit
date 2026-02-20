@@ -24,6 +24,7 @@ class ComposeDetector(
   @Volatile
   private var projectCache: Boolean? = null
 
+  @Synchronized
   fun isComposeMultiplatformProject(): Boolean {
     projectCache?.let { return it }
 
@@ -121,6 +122,7 @@ class ComposeDetector(
     return if (hasComposeResources) true else null
   }
 
+  @Synchronized
   fun invalidateCache() {
     moduleCache.clear()
     projectCache = null

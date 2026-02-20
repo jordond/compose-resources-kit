@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
@@ -34,7 +35,9 @@ class ComposeResourcesStatusBarWidgetFactory : StatusBarWidgetFactory {
 
   override fun createWidget(project: Project): StatusBarWidget = ComposeResourcesStatusBarWidget(project)
 
-  override fun disposeWidget(widget: StatusBarWidget) {}
+  override fun disposeWidget(widget: StatusBarWidget) {
+    Disposer.dispose(widget)
+  }
 
   companion object {
     const val WIDGET_ID = "ComposeResourcesWidget"
@@ -108,6 +111,8 @@ private class ComposeResourcesStatusBarWidget(
     val toggleIcon = if (settings.enabled) AllIcons.Actions.Suspend else AllIcons.Actions.Resume
     group.add(
       object : AnAction(toggleText, "Toggle automatic resource generation", toggleIcon) {
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+
         override fun actionPerformed(e: AnActionEvent) {
           settings.loadState(
             ComposeResourcesSettings.State(
@@ -129,11 +134,11 @@ private class ComposeResourcesStatusBarWidget(
         "Run resource accessor generation for all Compose modules",
         AllIcons.Actions.Refresh,
       ) {
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+
         override fun actionPerformed(e: AnActionEvent) {
           ComposeResourcesService.getInstance(project).runGenerateForAllModules()
         }
-
-        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
         override fun update(e: AnActionEvent) {
           e.presentation.isEnabled = settings.enabled
@@ -149,6 +154,8 @@ private class ComposeResourcesStatusBarWidget(
         "Redetect Compose multiplatform modules",
         AllIcons.Actions.ForceRefresh,
       ) {
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+
         override fun actionPerformed(e: AnActionEvent) {
           ComposeDetector.getInstance(project).invalidateCache()
           ApplicationManager
@@ -161,6 +168,8 @@ private class ComposeResourcesStatusBarWidget(
 
     group.add(
       object : AnAction("Settings...", "Open compose resources kit settings", AllIcons.General.Settings) {
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+
         override fun actionPerformed(e: AnActionEvent) {
           ShowSettingsUtil
             .getInstance()
