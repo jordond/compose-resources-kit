@@ -95,6 +95,48 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     assertTrue(targets.all { it is XmlAttributeValue })
   }
 
+  fun testNavigateToStringArrayInSeparateXmlFile() {
+    addComposeResource(
+      "values/arrays.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string-array name="colors">
+              <item>Red</item>
+              <item>Blue</item>
+          </string-array>
+      </resources>
+      """.trimIndent(),
+    )
+    val targets = gotoTargets("val x = Res.array.<caret>colors")
+
+    assertNotNull(targets)
+    assertEquals(1, targets!!.size)
+    assertInstanceOf(targets[0], XmlAttributeValue::class.java)
+    assertEquals("colors", (targets[0] as XmlAttributeValue).value)
+  }
+
+  fun testNavigateToPluralsInSeparateXmlFile() {
+    addComposeResource(
+      "values/plurals.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <plurals name="messages">
+              <item quantity="one">%d message</item>
+              <item quantity="other">%d messages</item>
+          </plurals>
+      </resources>
+      """.trimIndent(),
+    )
+    val targets = gotoTargets("val x = Res.plurals.<caret>messages")
+
+    assertNotNull(targets)
+    assertEquals(1, targets!!.size)
+    assertInstanceOf(targets[0], XmlAttributeValue::class.java)
+    assertEquals("messages", (targets[0] as XmlAttributeValue).value)
+  }
+
   fun testNavigateToDrawablePng() {
     addComposeResource("drawable/icon.png", "fake-png-content")
     val targets = gotoTargets("val x = Res.drawable.<caret>icon")

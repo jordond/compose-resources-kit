@@ -96,7 +96,7 @@ class ResourceGotoDeclarationHandler : GotoDeclarationHandler {
     return FileTypeIndex
       .getFiles(XmlFileType.INSTANCE, GlobalSearchScope.projectScope(project))
       .asSequence()
-      .filter { it.name == "strings.xml" && it.isInComposeResources() }
+      .filter { it.isInComposeResources() }
       .filter { it.parent?.name?.startsWith("values") == true }
       .mapNotNull { (psiManager.findFile(it) as? XmlFile)?.rootTag }
       .flatMap { it.findSubTags(ref.xmlTag).asSequence() }
