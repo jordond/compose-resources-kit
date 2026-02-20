@@ -37,8 +37,6 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     return handler.getGotoDeclarationTargets(element, myFixture.caretOffset, myFixture.editor)
   }
 
-  // region XML resource navigation (string, array, plurals)
-
   fun testNavigateToStringResource() {
     addComposeResource("values/strings.xml", stringsXml)
     val targets = gotoTargets("val x = Res.string.<caret>app_name")
@@ -97,10 +95,6 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     assertTrue(targets.all { it is XmlAttributeValue })
   }
 
-  // endregion
-
-  // region File resource navigation (drawable, font)
-
   fun testNavigateToDrawablePng() {
     addComposeResource("drawable/icon.png", "fake-png-content")
     val targets = gotoTargets("val x = Res.drawable.<caret>icon")
@@ -152,10 +146,6 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     assertEquals("icon.png", targets[0].containingFile.name)
   }
 
-  // endregion
-
-  // region Scoping / exclusion
-
   fun testIgnoresResourcesOutsideComposeResources() {
     myFixture.addFileToProject("values/strings.xml", stringsXml)
     val targets = gotoTargets("val x = Res.string.<caret>app_name")
@@ -172,10 +162,6 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
 
     assertNull(targets)
   }
-
-  // endregion
-
-  // region Negative / edge cases
 
   fun testUnknownResourceTypeReturnsNull() {
     addComposeResource("values/strings.xml", stringsXml)
@@ -204,5 +190,4 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     assertNull(result)
   }
 
-  // endregion
 }
