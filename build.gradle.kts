@@ -41,6 +41,7 @@ intellijPlatform {
   publishing {
     token = System.getenv("PUBLISH_TOKEN")
   }
+
   signing {
     certificateChain = System.getenv("SIGNING_CERTIFICATE_CHAIN")
     privateKey = System.getenv("SIGNING_PRIVATE_KEY")
