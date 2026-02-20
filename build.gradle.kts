@@ -2,14 +2,13 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-  id("java")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.intellij.platform)
   alias(libs.plugins.spotless)
 }
 
 group = "dev.jordond"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
   mavenCentral()
@@ -38,6 +37,15 @@ intellijPlatform {
       Initial version
       """.trimIndent()
   }
+
+  publishing {
+    token = System.getenv("PUBLISH_TOKEN")
+  }
+  signing {
+    certificateChain = System.getenv("SIGNING_CERTIFICATE_CHAIN")
+    privateKey = System.getenv("SIGNING_PRIVATE_KEY")
+    password = System.getenv("SIGNING_PASSWORD")
+  }
 }
 
 tasks {
@@ -57,10 +65,15 @@ spotless {
   kotlin {
     ktlint(libs.versions.ktlint.get()).setEditorConfigPath("${project.rootDir}/.editorconfig")
     target("**/*.kt", "**/*.kts")
-    targetExclude(
-      "${layout.buildDirectory}/**/*.kt",
-    )
+    targetExclude("${layout.buildDirectory}/**/*.kt")
     toggleOffOn()
+    endWithNewline()
+  }
+
+  flexmark {
+    target("**/.*.md")
+    targetExclude("${layout.buildDirectory}/**/*.md")
+    trimTrailingWhitespace()
     endWithNewline()
   }
 }

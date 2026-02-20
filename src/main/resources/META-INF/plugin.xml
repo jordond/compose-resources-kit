@@ -4,11 +4,13 @@
     <vendor url="https://jordond.dev">jordond</vendor>
 
     <description><![CDATA[
-        Automatically regenerates Compose Multiplatform resource accessors when
-        files in composeResources directories are modified.<br><br>
-        Eliminates the need to manually run <code>generateResourceAccessorsForCommonMain</code>
-        after editing strings.xml, drawables, or other resource files.<br><br>
-        The plugin only activates for projects using the <code>org.jetbrains.compose</code> Gradle plugin.
+        <p>Automatically regenerates <b>Compose Multiplatform</b> resource accessors when files in
+        <code>composeResources</code> directories change. No more manually running
+        <code>generateResourceAccessorsForCommonMain</code> after editing strings, drawables, or
+        other resource files.</p>
+
+        <p>Multi-module and source-set aware. Includes a status bar widget with quick actions.
+        Configure under <b>Settings &gt; Tools &gt; Compose Resources Kit</b>.</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
