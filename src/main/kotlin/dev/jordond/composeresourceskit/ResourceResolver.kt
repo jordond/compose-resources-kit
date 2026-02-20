@@ -12,7 +12,6 @@ import com.intellij.psi.search.PsiSearchHelper
 import com.intellij.psi.search.UsageSearchContext
 import com.intellij.psi.xml.XmlFile
 import com.intellij.psi.xml.XmlTag
-import dev.jordond.composeresourceskit.service.PluginLogger
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
@@ -78,7 +77,7 @@ object ResourceResolver {
     // Handle if the element is actually part of a name reference (e.g. the LeafPsiElement identifier)
     val parent = element.parent
     if (parent != null && parent != element && parent !is org.jetbrains.kotlin.psi.KtFile) {
-        return resolveResourceReference(parent)
+      return resolveResourceReference(parent)
     }
 
     return null
@@ -206,13 +205,18 @@ object ResourceResolver {
  * Displays the full resource expression (e.g. Res.string.app_name) and includes the file name
  * alongside the module name in the location string.
  */
-private class ResourceUsageTarget(val element: PsiElement) : PsiElement by element, com.intellij.navigation.NavigationItem {
+private class ResourceUsageTarget(
+  val element: PsiElement,
+) : PsiElement by element,
+  com.intellij.navigation.NavigationItem {
   override fun getPresentation(): com.intellij.navigation.ItemPresentation {
     return object : com.intellij.navigation.ItemPresentation {
       override fun getPresentableText(): String = element.text
 
       override fun getLocationString(): String {
-        val module = com.intellij.openapi.module.ModuleUtilCore.findModuleForPsiElement(element)?.name
+        val module = com.intellij.openapi.module.ModuleUtilCore
+          .findModuleForPsiElement(element)
+          ?.name
         val fileName = element.containingFile?.name ?: ""
         return if (module != null) "[$module] $fileName" else fileName
       }
@@ -222,6 +226,7 @@ private class ResourceUsageTarget(val element: PsiElement) : PsiElement by eleme
   }
 
   override fun getNavigationElement(): PsiElement = element
+
   override fun getOriginalElement(): PsiElement = element.originalElement
 
   override fun getName(): String? = (element as? com.intellij.navigation.NavigationItem)?.name
