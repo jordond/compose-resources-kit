@@ -71,6 +71,11 @@ class UnusedComposeResourceInspection : LocalInspectionTool() {
     var found = false
     searchHelper.processElementsWithWord(
       { element, _ ->
+        val file = element.containingFile?.virtualFile
+        if (file != null && (file.path.contains("/build/") || file.path.contains("/.gradle/"))) {
+          return@processElementsWithWord true
+        }
+
         if (element is KtSimpleNameExpression && element.text == resourceName) {
           val parent = element.parent
           if (parent != null && parent.text.startsWith(resPrefix)) {
