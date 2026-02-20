@@ -5,10 +5,10 @@ import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
-
   private val handler = ResourceGotoDeclarationHandler()
 
-  private val stringsXml = """
+  private val stringsXml =
+    """
     <?xml version="1.0" encoding="utf-8"?>
     <resources>
         <string name="app_name">My App</string>
@@ -22,9 +22,12 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
             <item quantity="other">%d items</item>
         </plurals>
     </resources>
-  """.trimIndent()
+    """.trimIndent()
 
-  private fun addComposeResource(path: String, content: String) {
+  private fun addComposeResource(
+    path: String,
+    content: String,
+  ) {
     myFixture.addFileToProject("composeResources/$path", content)
   }
 
@@ -81,10 +84,10 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     addComposeResource(
       "values-fr/strings.xml",
       """
-        <?xml version="1.0" encoding="utf-8"?>
-        <resources>
-            <string name="app_name">Mon App</string>
-        </resources>
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string name="app_name">Mon App</string>
+      </resources>
       """.trimIndent(),
     )
     val targets = gotoTargets("val x = Res.string.<caret>app_name")
@@ -111,8 +114,8 @@ class ResourceGotoDeclarationHandlerTest : BasePlatformTestCase() {
     addComposeResource(
       "drawable/background.xml",
       """
-        <?xml version="1.0" encoding="utf-8"?>
-        <vector xmlns:android="http://schemas.android.com/apk/res/android"/>
+      <?xml version="1.0" encoding="utf-8"?>
+      <vector xmlns:android="http://schemas.android.com/apk/res/android"/>
       """.trimIndent(),
     )
     val targets = gotoTargets("val x = Res.drawable.<caret>background")
