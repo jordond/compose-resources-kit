@@ -3,7 +3,7 @@ package dev.jordond.composeresourceskit.service
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import dev.jordond.composeresourceskit.settings.ComposeResourcesSettings
+import dev.jordond.composeresourceskit.settings
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CopyOnWriteArrayList
@@ -49,7 +49,7 @@ class PluginLogger(
     level: Entry.Level,
     message: String,
   ) {
-    if (!ComposeResourcesSettings.getInstance(project).loggingEnabled) return
+    if (!project.settings.loggingEnabled) return
     val entry = Entry(LocalTime.now().format(formatter), level, message)
     entries.add(entry)
     if (entries.size > MAX_ENTRIES) {

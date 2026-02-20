@@ -17,6 +17,7 @@ import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.Alarm
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
+import dev.jordond.composeresourceskit.settings
 import dev.jordond.composeresourceskit.settings.ComposeResourcesSettings
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -30,7 +31,7 @@ class ComposeResourcesService(
 
   private val updateQueue = MergingUpdateQueue(
     name = "ComposeResourcesGeneration",
-    mergingTimeSpan = ComposeResourcesSettings.getInstance(project).debounceMs,
+    mergingTimeSpan = project.settings.debounceMs,
     isActive = true,
     modalityStateComponent = null,
     parent = this,
@@ -43,6 +44,39 @@ class ComposeResourcesService(
   @Volatile
   var status: Status = Status.IDLE
     private set
+
+  fun runGenerateForAllModules() {
+    if (project.isDisposed) return
+    val detector = ComposeDetector.getInstance(project)
+    val pluginLog = PluginLogger.getInstance(project)
+
+    val modulePaths = ModuleManager
+      .getInstance(project)
+      .modules
+      .filter { detector.isComposeModule(it) }
+      .groupBy { ExternalSystemApiUtil.getExternalProjectPath(it) }
+      .mapNotNull { (_, modules) ->
+        modules.minByOrNull {
+          ExternalSystemApiUtil.getExternalProjectId(it)?.count { c -> c == ':' } ?: Int.MAX_VALUE
+        }
+      }.mapNotNull { module ->
+        val gradlePath = ExternalSystemApiUtil.getExternalProjectId(module) ?: return@mapNotNull null
+        when {
+          gradlePath == ":" || gradlePath.isBlank() -> ""
+          else -> gradlePath.trimEnd(':')
+        }
+      }
+
+    if (modulePaths.isEmpty()) {
+      pluginLog.warn("No Compose modules found — nothing to generate")
+      return
+    }
+
+    pluginLog.info("Generating resources for ${modulePaths.size} module(s)")
+    for (modulePath in modulePaths) {
+      runGenerateTask(modulePath)
+    }
+  }
 
   fun onFileChanged(filePath: String) {
     if (project.isDisposed) return
@@ -77,8 +111,7 @@ class ComposeResourcesService(
   private fun isWatchedResourcePath(path: String): Boolean {
     if (path.contains("/build/")) return false
     if (path.contains("/composeResources/") || path.endsWith("/composeResources")) return true
-    val settings = ComposeResourcesSettings.getInstance(project)
-    return settings.additionalResourcePaths.any { customPath ->
+    return project.settings.additionalResourcePaths.any { customPath ->
       path.contains("/$customPath/") || path.endsWith("/$customPath")
     }
   }
@@ -98,7 +131,9 @@ class ComposeResourcesService(
         val dirPath = dir.path
         // Find the root Gradle module (not a source-set sub-module) at this path.
         // Source-set modules share the same externalProjectPath but have more ':' segments.
-        val module = ModuleManager.getInstance(project).modules
+        val module = ModuleManager
+          .getInstance(project)
+          .modules
           .filter { ExternalSystemApiUtil.getExternalProjectPath(it) == dirPath }
           .filter { detector.isComposeModule(it) }
           .minByOrNull { ExternalSystemApiUtil.getExternalProjectId(it)?.count { c -> c == ':' } ?: Int.MAX_VALUE }
@@ -121,7 +156,7 @@ class ComposeResourcesService(
     val composeResIdx = filePath.indexOf("/composeResources")
     if (composeResIdx != -1) return filePath.substring(0, composeResIdx)
 
-    val settings = ComposeResourcesSettings.getInstance(project)
+    val settings = project.settings
     for (customPath in settings.additionalResourcePaths) {
       val idx = filePath.indexOf("/$customPath/")
       if (idx != -1) return filePath.substring(0, idx)
@@ -162,6 +197,7 @@ class ComposeResourcesService(
       externalSystemIdString = GRADLE_SYSTEM_ID.id
     }
 
+    val showNotifications = project.settings.showNotifications
     try {
       ExternalSystemUtil.runTask(
         taskSettings,
@@ -177,8 +213,7 @@ class ComposeResourcesService(
       updateStatus(if (runningModules.isEmpty()) Status.IDLE else Status.RUNNING)
       pluginLog.info("Gradle task dispatched successfully: $taskName")
       log.info("Gradle task dispatched: $taskName")
-      val settings = ComposeResourcesSettings.getInstance(project)
-      if (settings.showNotifications) {
+      if (showNotifications) {
         notify("Resource accessors generated for ${modulePath.ifEmpty { "root" }}")
       }
     } catch (e: Exception) {
@@ -186,8 +221,7 @@ class ComposeResourcesService(
       updateStatus(Status.ERROR)
       log.error("Failed to run Gradle task: $taskName", e)
       pluginLog.error("Failed to run Gradle task: $taskName — ${e.message}")
-      val settings = ComposeResourcesSettings.getInstance(project)
-      if (settings.showNotifications) {
+      if (showNotifications) {
         notify("Failed to run Gradle task: ${e.message}", NotificationType.ERROR)
       }
     }

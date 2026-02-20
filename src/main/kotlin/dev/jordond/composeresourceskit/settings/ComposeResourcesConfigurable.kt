@@ -16,6 +16,7 @@ import com.intellij.ui.layout.selected
 import dev.jordond.composeresourceskit.service.ComposeDetector
 import dev.jordond.composeresourceskit.service.ComposeResourcesService
 import dev.jordond.composeresourceskit.service.PluginLogger
+import dev.jordond.composeresourceskit.settings
 import java.awt.Font
 import javax.swing.DefaultListModel
 import javax.swing.JButton
@@ -39,11 +40,11 @@ class ComposeResourcesConfigurable(
   private var logTextArea: JBTextArea? = null
   private var logListener: (() -> Unit)? = null
 
+  private val settings get() = project.settings
+
   override fun getDisplayName(): String = "Compose Resources Kit"
 
   override fun createComponent(): JComponent {
-    val settings = ComposeResourcesSettings.getInstance(project)
-
     val listModel = DefaultListModel<String>()
     settings.additionalResourcePaths.forEach { listModel.addElement(it) }
     pathsListModel = listModel
@@ -193,7 +194,6 @@ class ComposeResourcesConfigurable(
   }
 
   override fun isModified(): Boolean {
-    val settings = ComposeResourcesSettings.getInstance(project)
     if (enabledCheckBox?.isSelected != settings.enabled) return true
     if ((debounceSpinner?.value as? Int) != settings.debounceMs) return true
     if (notificationsCheckBox?.isSelected != settings.showNotifications) return true
@@ -202,13 +202,11 @@ class ComposeResourcesConfigurable(
     val currentPaths = pathsListModel?.let { model ->
       (0 until model.size()).map { model.getElementAt(it) }
     } ?: emptyList()
-    if (currentPaths != settings.additionalResourcePaths) return true
 
-    return false
+    return currentPaths != settings.additionalResourcePaths
   }
 
   override fun apply() {
-    val settings = ComposeResourcesSettings.getInstance(project)
     val paths = pathsListModel?.let { model ->
       (0 until model.size()).map { model.getElementAt(it) }.toMutableList()
     } ?: mutableListOf()
@@ -225,7 +223,6 @@ class ComposeResourcesConfigurable(
   }
 
   override fun reset() {
-    val settings = ComposeResourcesSettings.getInstance(project)
     enabledCheckBox?.isSelected = settings.enabled
     debounceSpinner?.value = settings.debounceMs
     notificationsCheckBox?.isSelected = settings.showNotifications

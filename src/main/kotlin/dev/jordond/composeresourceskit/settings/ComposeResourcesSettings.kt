@@ -15,7 +15,7 @@ class ComposeResourcesSettings : PersistentStateComponent<ComposeResourcesSettin
   data class State(
     var enabled: Boolean = true,
     var debounceMs: Int = 2000,
-    var showNotifications: Boolean = true,
+    var showNotifications: Boolean = false,
     var loggingEnabled: Boolean = false,
     var additionalResourcePaths: MutableList<String> = mutableListOf(),
   )

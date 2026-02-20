@@ -23,25 +23,13 @@
             displayName="Compose Resources Kit"
             provider="dev.jordond.composeresourceskit.settings.ComposeResourcesConfigurableProvider"/>
 
-        <projectService
-            serviceImplementation="dev.jordond.composeresourceskit.service.ComposeDetector"/>
-
-        <projectService
-            serviceImplementation="dev.jordond.composeresourceskit.service.ComposeResourcesService"/>
-
-        <projectService
-            serviceImplementation="dev.jordond.composeresourceskit.service.PluginLogger"/>
-
         <statusBarWidgetFactory
             id="ComposeResourcesWidget"
             implementation="dev.jordond.composeresourceskit.ui.ComposeResourcesStatusBarWidgetFactory"/>
 
         <notificationGroup id="Compose Resources Kit" displayType="BALLOON"/>
-    </extensions>
 
-    <applicationListeners>
-        <listener
-            class="dev.jordond.composeresourceskit.listener.ComposeResourcesFileListener"
-            topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
-    </applicationListeners>
+        <postStartupActivity
+            implementation="dev.jordond.composeresourceskit.ComposeResourcesStartupActivity"/>
+    </extensions>
 </idea-plugin>

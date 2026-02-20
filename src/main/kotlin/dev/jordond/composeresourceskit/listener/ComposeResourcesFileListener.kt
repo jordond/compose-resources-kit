@@ -1,6 +1,6 @@
 package dev.jordond.composeresourceskit.listener
 
-import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
@@ -11,43 +11,43 @@ import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import dev.jordond.composeresourceskit.service.ComposeDetector
 import dev.jordond.composeresourceskit.service.ComposeResourcesService
 import dev.jordond.composeresourceskit.service.PluginLogger
-import dev.jordond.composeresourceskit.settings.ComposeResourcesSettings
+import dev.jordond.composeresourceskit.settings
 
-class ComposeResourcesFileListener : BulkFileListener {
+class ComposeResourcesFileListener(
+  private val project: Project,
+) : BulkFileListener {
   override fun after(events: MutableList<out VFileEvent>) {
+    if (project.isDisposed) return
+
     val relevantEvents = events.filter { it.isRelevantEvent() }
     if (relevantEvents.isEmpty()) return
 
-    for (project in ProjectManager.getInstance().openProjects) {
-      if (project.isDisposed) continue
-      val log = PluginLogger.getInstance(project)
+    val log = PluginLogger.getInstance(project)
 
-      val settings = ComposeResourcesSettings.getInstance(project)
-      if (!settings.enabled) {
-        log.warn("Plugin disabled — ignoring ${relevantEvents.size} event(s)")
-        continue
-      }
+    if (!project.settings.enabled) {
+      log.warn("Plugin disabled — ignoring ${relevantEvents.size} event(s)")
+      return
+    }
 
-      val isCompose = ComposeDetector.getInstance(project).isComposeMultiplatformProject()
-      if (!isCompose) {
-        log.warn(
-          "Project not detected as Compose Multiplatform — ignoring ${relevantEvents.size} event(s). Try clicking 'Refresh Detection' in settings.",
-        )
-        continue
-      }
+    if (!ComposeDetector.getInstance(project).isComposeMultiplatformProject()) {
+      log.warn(
+        "Project not detected as Compose Multiplatform — ignoring ${relevantEvents.size} event(s). " +
+          "Try clicking 'Refresh Detection' in settings.",
+      )
+      return
+    }
 
-      val basePath = project.basePath ?: continue
-      val service = ComposeResourcesService.getInstance(project)
+    val basePath = project.basePath ?: return
+    val service = ComposeResourcesService.getInstance(project)
 
-      for (event in relevantEvents) {
-        val path = event.path
-        if (path.startsWith(basePath)) {
-          val eventType = event.javaClass.simpleName
-            .removePrefix("VFile")
-            .removeSuffix("Event")
-          log.info("[$eventType] $path")
-          service.onFileChanged(path)
-        }
+    for (event in relevantEvents) {
+      val path = event.path
+      if (path.startsWith(basePath)) {
+        val eventType = event.javaClass.simpleName
+          .removePrefix("VFile")
+          .removeSuffix("Event")
+        log.info("[$eventType] $path")
+        service.onFileChanged(path)
       }
     }
   }
