@@ -1,0 +1,52 @@
+name: Publish
+
+on:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: "Publish Plugin"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Update version and changelog
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          chmod +x .github/pre-publish.sh
+          echo "$RELEASE_BODY" > /tmp/changelog.txt
+          .github/pre-publish.sh "${{ github.event.release.tag_name }}" /tmp/changelog.txt
+
+      - name: Build plugin
+        run: ./gradlew buildPlugin
+
+      - name: Publish to JetBrains Marketplace
+        run: ./gradlew publishPlugin
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          SIGNING_CERTIFICATE_CHAIN: ${{ secrets.SIGNING_CERTIFICATE_CHAIN }}
+          SIGNING_PRIVATE_KEY: ${{ secrets.SIGNING_PRIVATE_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+
+      - name: Upload artifact to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            build/distributions/*.zip \
+            --clobber
