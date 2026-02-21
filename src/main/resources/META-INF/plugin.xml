@@ -46,6 +46,22 @@
             groupName="Compose Resources Kit"
             enabledByDefault="true"
             level="WARNING"/>
+
+        <localInspection
+            language="XML"
+            implementationClass="dev.jordond.composeresourceskit.inspection.ComposeResourceFormatInspection"
+            displayName="Invalid Compose resource format specifier"
+            groupName="Compose Resources Kit"
+            enabledByDefault="true"
+            level="ERROR"/>
+
+        <localInspection
+            language="kotlin"
+            implementationClass="dev.jordond.composeresourceskit.inspection.ComposeResourceArgumentInspection"
+            displayName="Compose resource format argument mismatch"
+            groupName="Compose Resources Kit"
+            enabledByDefault="true"
+            level="WARNING"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
