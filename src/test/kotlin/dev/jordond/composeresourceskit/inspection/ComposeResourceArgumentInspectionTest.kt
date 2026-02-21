@@ -66,8 +66,6 @@ class ComposeResourceArgumentInspectionTest : BasePlatformTestCase() {
     myFixture.addFileToProject("composeResources/$path", content)
   }
 
-  // -- stringResource: correct argument counts --
-
   fun testStringResourceNoArgsNeededNonePassed() {
     addResStub(strings = listOf("no_args"))
     addComposeResource(
@@ -130,8 +128,6 @@ class ComposeResourceArgumentInspectionTest : BasePlatformTestCase() {
     assertTrue("1 arg needed, 1 passed should be OK", argMismatches.isEmpty())
   }
 
-  // -- stringResource: argument mismatches --
-
   fun testStringResourceOneArgNeededNonePassed() {
     addResStub(strings = listOf("one_arg"))
     addComposeResource(
@@ -193,8 +189,6 @@ class ComposeResourceArgumentInspectionTest : BasePlatformTestCase() {
 
     assertFalse("2 args needed, 1 passed should be flagged", argMismatches.isEmpty())
   }
-
-  // -- pluralStringResource --
 
   fun testPluralStringResourceCorrect() {
     addResStub(plurals = listOf("items"))
@@ -306,8 +300,6 @@ class ComposeResourceArgumentInspectionTest : BasePlatformTestCase() {
       quantityHints.isEmpty(),
     )
   }
-
-  // -- Non-resource calls should be ignored --
 
   fun testIgnoresNonResourceCalls() {
     myFixture.configureByText(

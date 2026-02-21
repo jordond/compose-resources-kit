@@ -40,8 +40,6 @@ class FormatSpecifierParserTest : TestCase() {
     assertEquals(3, FormatSpecifierParser.countFormatArguments("%1\$s %3\$s"))
   }
 
-  // -- validate --
-
   fun testValidStringPasses() {
     val issues = FormatSpecifierParser.validate("Hello %1\$s, you have %2\$d items")
     assertTrue(issues.isEmpty())
@@ -79,8 +77,6 @@ class FormatSpecifierParserTest : TestCase() {
     val invalidSpecifiers = issues.filterIsInstance<FormatSpecifierParser.ValidationResult.InvalidSpecifier>()
     assertTrue("Escaped %% should not be flagged", invalidSpecifiers.isEmpty())
   }
-
-  // -- Percent and dollar sign edge cases --
 
   fun testDollarAmountNotFlagged() {
     val issues = FormatSpecifierParser.validate("Price: \$10.00")
@@ -172,8 +168,6 @@ class FormatSpecifierParserTest : TestCase() {
     val invalid = issues.filterIsInstance<FormatSpecifierParser.ValidationResult.InvalidSpecifier>()
     assertTrue("Percent followed by ) should not be flagged", invalid.isEmpty())
   }
-
-  // -- validatePluralsConsistency --
 
   fun testConsistentPlurals() {
     val variants = mapOf(
