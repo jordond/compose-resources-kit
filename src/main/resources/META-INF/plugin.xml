@@ -56,6 +56,14 @@
             level="ERROR"/>
 
         <localInspection
+            language="XML"
+            implementationClass="dev.jordond.composeresourceskit.inspection.ComposeResourceEscapeInspection"
+            displayName="Unnecessary Android escape in Compose resource"
+            groupName="Compose Resources Kit"
+            enabledByDefault="true"
+            level="WARNING"/>
+
+        <localInspection
             language="kotlin"
             implementationClass="dev.jordond.composeresourceskit.inspection.ComposeResourceArgumentInspection"
             displayName="Compose resource format argument mismatch"

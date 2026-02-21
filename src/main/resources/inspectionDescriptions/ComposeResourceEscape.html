@@ -1,0 +1,34 @@
+<html lang="en">
+<body>
+Reports unnecessary Android-style backslash escapes in Compose Multiplatform string and plural resources.
+<p>
+    Unlike Android, Compose Multiplatform does not require escaping <code>'</code>,
+    <code>"</code>, <code>@</code>, or <code>?</code> with a backslash. Using these
+    Android escapes in Compose resources cause the backslash to appear literally
+    in the rendered string.
+</p>
+<p>Example of problematic code:</p>
+<pre><code>
+&lt;string name="greeting"&gt;Let\'s do something&lt;/string&gt;
+</code></pre>
+<p>After the quick fix is applied:</p>
+<pre><code>
+&lt;string name="greeting"&gt;Let's do something&lt;/string&gt;
+</code></pre>
+<!-- tooltip end -->
+<p>
+    The following backslash escapes are flagged as unnecessary:
+</p>
+<ul>
+    <li><code>\'</code> &mdash; apostrophe does not need escaping</li>
+    <li><code>\"</code> &mdash; double quote does not need escaping</li>
+    <li><code>\@</code> &mdash; <code>@</code> is not treated as a resource reference</li>
+    <li><code>\?</code> &mdash; <code>?</code> is not treated as a theme attribute</li>
+</ul>
+<p>
+    Valid backslash sequences (<code>\n</code>, <code>\t</code>, <code>\\</code>,
+    <code>\uXXXX</code>) and standard XML entities (<code>&amp;amp;</code>,
+    <code>&amp;lt;</code>, <code>&amp;apos;</code>) are not affected by this inspection.
+</p>
+</body>
+</html>
