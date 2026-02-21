@@ -1,0 +1,29 @@
+<html>
+<body>
+Reports invalid format specifiers in Compose Multiplatform string and plural resources.
+<p>
+    Compose Multiplatform only supports positional format specifiers in the form
+    <code>%N$s</code> (string) and <code>%N$d</code> (integer), where <code>N</code> is a
+    1-based index. Unlike Java's <code>String.format()</code>, unpositioned specifiers like
+    <code>%s</code> or <code>%d</code>, as well as width/precision modifiers and other
+    conversion types (<code>%f</code>, <code>%x</code>, <code>%b</code>), are not supported.
+</p>
+<p>
+    This inspection also verifies that specifier positions are sequential (starting from 1
+    with no gaps) and that all plural variants use a consistent set of format specifiers.
+</p>
+<p>Example of problematic code:</p>
+<pre><code>
+&lt;string name="greeting"&gt;Hello %s, you have %d items&lt;/string&gt;
+</code></pre>
+<p>After the quick fix is applied:</p>
+<pre><code>
+&lt;string name="greeting"&gt;Hello %1$s, you have %2$d items&lt;/string&gt;
+</code></pre>
+<!-- tooltip end -->
+<p>
+    Use the provided 'Convert to positional format specifier' quick fix to automatically
+    replace unpositioned specifiers with the correct positional syntax.
+</p>
+</body>
+</html>

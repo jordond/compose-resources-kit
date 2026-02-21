@@ -1,0 +1,30 @@
+<html>
+<body>
+Reports mismatches between the number of format arguments passed to
+<code>stringResource()</code> or <code>pluralStringResource()</code> and the number of
+format specifiers defined in the corresponding XML resource.
+<p>
+    For example, if a string resource contains <code>%1$s</code> and <code>%2$d</code>,
+    the call site must provide exactly 2 format arguments after the resource reference.
+    For <code>pluralStringResource()</code>, note that the quantity parameter is not
+    counted as a format argument.
+</p>
+<p>Example of a <code>stringResource</code> call with a missing argument:</p>
+<pre><code>
+// strings.xml: &lt;string name="greeting"&gt;Hello %1$s, you have %2$d items&lt;/string&gt;
+
+// Warning: expects 2 format arguments, but 1 was provided
+stringResource(Res.string.greeting, name)
+</code></pre>
+<p>Correct usage:</p>
+<pre><code>
+stringResource(Res.string.greeting, name, count)
+</code></pre>
+<!-- tooltip end -->
+<p>
+    This inspection resolves <code>stringResource</code> and <code>pluralStringResource</code>
+    calls from the <code>org.jetbrains.compose.resources</code> package and cross-references
+    the format specifiers found in the XML resource definition.
+</p>
+</body>
+</html>
