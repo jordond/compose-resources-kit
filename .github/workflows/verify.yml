@@ -1,0 +1,55 @@
+name: Plugin Verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'gradle/libs.versions.toml'
+  pull_request:
+    branches:
+      - main
+    types: [ opened, synchronize, reopened, ready_for_review ]
+    paths:
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'gradle/libs.versions.toml'
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: "Verify Plugin Compatibility"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Build plugin
+        run: ./gradlew buildPlugin
+
+      - name: Verify Plugin on IntelliJ Platforms
+        id: verify
+        uses: ChrisCarini/intellij-platform-plugin-verifier-action@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          ide-versions: |
+            ideaIC:2024.3
+            ideaIC:2025.1
+            ideaIC:2025.2
+            ideaIC:2025.3
+            ideaIC:LATEST-EAP-SNAPSHOT
+          failure-levels: |
+            COMPATIBILITY_PROBLEMS INVALID_PLUGIN
