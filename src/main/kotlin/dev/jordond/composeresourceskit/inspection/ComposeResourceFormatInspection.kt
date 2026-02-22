@@ -99,7 +99,7 @@ class ComposeResourceFormatInspection : LocalInspectionTool() {
             "Invalid format specifier '${issue.specifier}'. " +
               "Compose resources only support %N\$s and %N\$d (e.g., %1\$s, %2\$d)",
             ProblemHighlightType.ERROR,
-            ConvertToPositionalSpecifierQuickFix(issue.specifier),
+            ConvertToPositionalSpecifierQuickFix(),
           )
         }
 
@@ -140,10 +140,8 @@ class ComposeResourceFormatInspection : LocalInspectionTool() {
   }
 }
 
-private class ConvertToPositionalSpecifierQuickFix(
-  private val invalidSpecifier: String,
-) : LocalQuickFix {
-  override fun getName(): String = "Convert '$invalidSpecifier' to positional specifier"
+private class ConvertToPositionalSpecifierQuickFix : LocalQuickFix {
+  override fun getName(): String = "Convert all unpositioned specifiers to positional format"
 
   override fun getFamilyName(): String = "Convert to positional format specifier"
 
