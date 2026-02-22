@@ -12,6 +12,8 @@ navigation, inspections, and management.
 [![CI](https://img.shields.io/github/actions/workflow/status/jordond/compose-resources-kit/ci.yml?label=CI&logo=github)](https://github.com/jordond/compose-resources-kit/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/jordond/compose-resources-kit)](LICENSE.md)
 
+<img width="1200" alt="Demo" src="https://github.com/user-attachments/assets/213b30b4-9925-4f10-8283-bdfe6b2b4366" />
+
 </div>
 
 ## Features
@@ -105,6 +107,10 @@ affected.
       automatically with a warning.
 4. **(Optional) Configure**: Go to **Settings > Tools > Compose Resources Kit** to adjust the watcher delay, toggle
    features, or add custom resource directories.
+
+## Demo
+
+https://github.com/user-attachments/assets/5fdd6b35-e3e0-4755-8683-d1a2b257b9f9
 
 ## Settings
 
