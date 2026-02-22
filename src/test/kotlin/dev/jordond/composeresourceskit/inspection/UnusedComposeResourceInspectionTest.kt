@@ -15,8 +15,6 @@ class UnusedComposeResourceInspectionTest : BasePlatformTestCase() {
     myFixture.addFileToProject("composeResources/$path", content)
   }
 
-  // -- Unused detection --
-
   fun testUnusedStringHighlighted() {
     addComposeResource(
       "values/strings.xml",
@@ -173,8 +171,6 @@ class UnusedComposeResourceInspectionTest : BasePlatformTestCase() {
     assertTrue("Should not flag used plurals", unusedWarnings.isEmpty())
   }
 
-  // -- Ignores non-compose resources --
-
   fun testIgnoresXmlOutsideComposeResources() {
     myFixture.addFileToProject(
       "values/strings.xml",
@@ -196,8 +192,6 @@ class UnusedComposeResourceInspectionTest : BasePlatformTestCase() {
 
     assertTrue("Should not inspect XML outside composeResources", unusedWarnings.isEmpty())
   }
-
-  // -- Mixed used/unused --
 
   fun testMixedUsedAndUnusedResources() {
     addComposeResource(
@@ -278,8 +272,6 @@ class UnusedComposeResourceInspectionTest : BasePlatformTestCase() {
     val homeWarning = unusedWarnings.find { it.description!!.contains("'home'") }
     assertNotNull("Resource 'home' should be flagged as unused even if 'home_action' is used", homeWarning)
   }
-
-  // -- Quick fix --
 
   fun testQuickFixRemovesTag() {
     addComposeResource(

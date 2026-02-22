@@ -1,0 +1,21 @@
+<html lang="en">
+<body>
+Reports string, plural, and array resources defined in Compose Multiplatform XML files
+that are not referenced anywhere in the project's Kotlin code.
+<p>
+    This inspection searches the project for references matching the resource's
+    generated accessor (e.g., <code>Res.string.greeting</code>) and highlights
+    resources with no usages found.
+</p>
+<p>Example:</p>
+<pre><code>
+&lt;!-- Highlighted as unused if no Kotlin code references Res.string.old_message --&gt;
+&lt;string name="old_message"&gt;This message is no longer used&lt;/string&gt;
+</code></pre>
+<!-- tooltip end -->
+<p>
+    Use the provided 'Remove unused resource' quick fix to delete the resource
+    element from the XML file.
+</p>
+</body>
+</html>
