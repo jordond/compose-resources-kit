@@ -5,9 +5,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -85,12 +85,10 @@ private class ComposeResourcesStatusBarWidget(
         Consumer { e ->
           val component = e.component ?: return@Consumer
           val group = createActionGroup()
-          val dataContext = DataContext { dataId ->
-            when (dataId) {
-              CommonDataKeys.PROJECT.name -> project
-              else -> null
-            }
-          }
+          val dataContext = SimpleDataContext
+            .builder()
+            .add(CommonDataKeys.PROJECT, project)
+            .build()
           val popup = JBPopupFactory.getInstance().createActionGroupPopup(
             "Compose Resources Kit",
             group,
