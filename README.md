@@ -5,7 +5,7 @@
 # Compose Resources Kit
 
 A collection of tools for working with Compose Multiplatform resources. Automated resource accessor generation, resource
-navigation, and management.
+navigation, inspections, and management.
 
 [![Version](https://img.shields.io/github/v/release/jordond/compose-resources-kit?label=Version&logo=github)](https://github.com/jordond/compose-resources-kit/releases)
 [![Marketplace](https://img.shields.io/jetbrains/plugin/v/30280-compose-resources-kit?label=Marketplace&logo=jetbrains)](https://plugins.jetbrains.com/plugin/30280-compose-resources-kit)
@@ -21,6 +21,12 @@ navigation, and management.
 - **Unused Resource Detection**: Highlights unused XML resources (strings, plurals, etc.) and provides a quick fix to
   remove them.
 - **Resource Navigation**: Go to declaration support from Kotlin to XML and vice versa.
+- **Format Specifier Validation**: Detects invalid or unpositioned format specifiers in string and plural resources, with
+  quick fixes to convert them to positional format.
+- **Argument Count Validation**: Checks `stringResource()` and `pluralStringResource()` calls to ensure the correct
+  number of format arguments are passed.
+- **Unnecessary Escape Detection**: Warns about Android-style backslash escapes that are not needed in Compose
+  Multiplatform.
 
 ### Automatic Resource Accessors
 
@@ -54,6 +60,35 @@ Navigate between your resources and code with ease:
   to its XML definition.
 - **XML to Kotlin**: Command/Ctrl + Click on a resource `name` attribute in XML to find its usages in your project's
   Kotlin code.
+
+### Format Specifier Validation
+
+Validates format specifiers in your string and plural resources. Compose Multiplatform requires positional format
+specifiers (`%1$s`, `%2$d`), not the unpositioned format (`%s`, `%d`) that Android allows. This inspection catches:
+
+- Unpositioned specifiers like `%s` or `%d` (with a quick fix to convert them)
+- Invalid format specifier syntax
+- Duplicate positional indices
+- Gaps in positional numbering
+
+### Argument Count Validation
+
+Inspects your Kotlin code to ensure `stringResource()` and `pluralStringResource()` calls pass the correct number of
+format arguments. If your string expects 2 arguments (`%1$s` and `%2$d`) but you only pass 1, the inspection will flag
+the mismatch.
+
+### Unnecessary Escape Detection
+
+Developers migrating from Android often carry over escape sequences that are not needed in Compose Multiplatform. This
+inspection warns about unnecessary backslash escapes:
+
+- `\'` — apostrophe does not need escaping
+- `\"` — double quote does not need escaping
+- `\@` — `@` is not treated as a resource reference
+- `\?` — `?` is not treated as a theme attribute
+
+A quick fix is available to remove the unnecessary backslash. Valid escapes like `\n`, `\t`, `\\`, and `\uXXXX` are not
+affected.
 
 ## Getting Started
 

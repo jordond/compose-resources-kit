@@ -4,13 +4,16 @@
     <vendor url="https://jordond.dev">jordond</vendor>
 
     <description><![CDATA[
-        <p>A collection of tools for working with Compose Multiplatform resources. Automated resource accessor generation, resource navigation, and management.</p>
+        <p>A collection of tools for working with Compose Multiplatform resources. Automated resource accessor generation, resource navigation, inspections, and management.</p>
 
         <h3>Features</h3>
         <ul>
             <li><b>Automatic Resource Accessors</b>: Watches your <code>composeResources</code> directories and automatically runs <code>generateResourceAccessors</code> on file changes.</li>
             <li><b>Unused Resource Detection</b>: Highlights unused XML resources (strings, plurals, etc.) and provides a quick fix to remove them safely.</li>
             <li><b>Resource Navigation</b>: Go to declaration support from Kotlin code to XML definitions and find usages from XML back to Kotlin.</li>
+            <li><b>Format Specifier Validation</b>: Detects invalid or unpositioned format specifiers (<code>%s</code>, <code>%d</code>) in string and plural resources, with quick fixes to convert them to positional format (<code>%1$s</code>).</li>
+            <li><b>Argument Count Validation</b>: Checks <code>stringResource()</code> and <code>pluralStringResource()</code> calls to ensure the correct number of format arguments are passed.</li>
+            <li><b>Unnecessary Escape Detection</b>: Warns about Android-style backslash escapes (<code>\'</code>, <code>\"</code>, <code>\@</code>, <code>\?</code>) that are not needed in Compose Multiplatform and would appear literally in the rendered string.</li>
         </ul>
 
         <p>Configure under <b>Settings &gt; Tools &gt; Compose Resources Kit</b>.</p>
