@@ -6,9 +6,6 @@ import com.intellij.psi.PsiElementVisitor
 import dev.jordond.composeresourceskit.RESOURCE_PREFIXES
 import dev.jordond.composeresourceskit.ResourceReference
 import dev.jordond.composeresourceskit.ResourceResolver
-import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.resolution.successfulFunctionCallOrNull
-import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtVisitorVoid
@@ -85,29 +82,25 @@ class ComposeResourceArgumentInspection : LocalInspectionTool() {
   }
 
   /**
-   * Uses K2 Analysis API to resolve the call and confirm it targets
-   * a Compose Resources function (`stringResource` or `pluralStringResource`).
+   * Checks file imports to confirm the call targets a Compose Resources function.
    *
    * Returns the [FunctionKind] if confirmed, null otherwise.
    */
   private fun resolveFunction(expression: KtCallExpression): FunctionKind? {
-    return try {
-      analyze(expression) {
-        val call = expression
-          .resolveToCall()
-          ?.successfulFunctionCallOrNull() ?: return@analyze null
+    val calleeText = expression.calleeExpression?.text ?: return null
+    val kind = TARGET_FUNCTIONS[calleeText] ?: return null
 
-        val symbol = call.partiallyAppliedSymbol.symbol
-        val callableId = symbol.callableId ?: return@analyze null
-
-        if (callableId.className != null) return@analyze null
-        if (callableId.packageName.asString() != COMPOSE_RESOURCES_PACKAGE) return@analyze null
-
-        TARGET_FUNCTIONS[callableId.callableName.asString()]
+    val file = expression.containingKtFile
+    val hasMatchingImport = file.importDirectives.any { import ->
+      val fqName = import.importedFqName?.asString() ?: return@any false
+      if (import.isAllUnder) {
+        fqName == COMPOSE_RESOURCES_PACKAGE
+      } else {
+        fqName == "$COMPOSE_RESOURCES_PACKAGE.$calleeText"
       }
-    } catch (_: Exception) {
-      null
     }
+
+    return if (hasMatchingImport) kind else null
   }
 
   private fun extractResourceRef(expression: org.jetbrains.kotlin.psi.KtExpression): ResourceReference? {
