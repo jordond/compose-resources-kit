@@ -10,7 +10,7 @@ navigation, inspections, and management.
 [![Version](https://img.shields.io/github/v/release/jordond/compose-resources-kit?label=Version&logo=github)](https://github.com/jordond/compose-resources-kit/releases)
 [![Marketplace](https://img.shields.io/jetbrains/plugin/v/30280-compose-resources-kit?label=Marketplace&logo=jetbrains)](https://plugins.jetbrains.com/plugin/30280-compose-resources-kit)
 [![CI](https://img.shields.io/github/actions/workflow/status/jordond/compose-resources-kit/ci.yml?label=CI&logo=github)](https://github.com/jordond/compose-resources-kit/actions/workflows/ci.yml)
-[![Verify](https://img.shields.io/github/actions/workflow/status/jordond/compose-resources-kit/verify.yml?label=CI&logo=github)](https://github.com/jordond/compose-resources-kit/actions/workflows/verify.yml)
+[![Verify](https://img.shields.io/github/actions/workflow/status/jordond/compose-resources-kit/verify.yml?label=Verify&logo=github)](https://github.com/jordond/compose-resources-kit/actions/workflows/verify.yml)
 [![License](https://img.shields.io/github/license/jordond/compose-resources-kit)](LICENSE.md)
 
 <img width="1200" alt="Demo" src="https://github.com/user-attachments/assets/213b30b4-9925-4f10-8283-bdfe6b2b4366" />
