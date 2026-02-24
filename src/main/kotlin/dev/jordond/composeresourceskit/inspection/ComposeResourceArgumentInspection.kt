@@ -36,6 +36,10 @@ class ComposeResourceArgumentInspection : LocalInspectionTool() {
         val calleeText = expression.calleeExpression?.text ?: return
         if (calleeText !in TARGET_FUNCTIONS) return
 
+        // Skip calls with an explicit receiver (e.g., receiver.stringResource(...))
+        val parent = expression.parent
+        if (parent is KtDotQualifiedExpression && parent.selectorExpression == expression) return
+
         // Quick PSI-level check: does the first argument look like a resource reference?
         val args = expression.valueArguments
         if (args.isEmpty()) return

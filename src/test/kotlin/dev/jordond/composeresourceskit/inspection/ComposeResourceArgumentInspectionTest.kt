@@ -301,6 +301,73 @@ class ComposeResourceArgumentInspectionTest : BasePlatformTestCase() {
     )
   }
 
+  fun testStringResourceWithWildcardImport() {
+    addResStub(strings = listOf("one_arg"))
+    addComposeResource(
+      "values/strings.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string name="one_arg">Hello %1${'$'}s</string>
+      </resources>
+      """.trimIndent(),
+    )
+
+    myFixture.configureByText(
+      "Test.kt",
+      """
+      import org.jetbrains.compose.resources.*
+
+      fun test() {
+          stringResource(Res.string.one_arg)
+      }
+      """.trimIndent(),
+    )
+
+    val highlights = myFixture.doHighlighting()
+    val argMismatches = highlights.filter {
+      it.description?.contains("format argument") == true
+    }
+
+    assertFalse("Wildcard import should be recognized — 1 arg needed, 0 passed", argMismatches.isEmpty())
+  }
+
+  fun testIgnoresReceiverQualifiedCall() {
+    addResStub(strings = listOf("one_arg"))
+    addComposeResource(
+      "values/strings.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <string name="one_arg">Hello %1${'$'}s</string>
+      </resources>
+      """.trimIndent(),
+    )
+
+    myFixture.configureByText(
+      "Test.kt",
+      """
+      import org.jetbrains.compose.resources.stringResource
+
+      class MyHelper {
+          fun stringResource(resource: Any): String = ""
+      }
+
+      fun test() {
+          val helper = MyHelper()
+          helper.stringResource(Res.string.one_arg)
+      }
+      """.trimIndent(),
+    )
+
+    val highlights = myFixture.doHighlighting()
+    val argMismatches = highlights.filter {
+      it.description?.contains("format argument") == true
+    }
+
+    assertTrue("Receiver-qualified calls should be ignored", argMismatches.isEmpty())
+  }
+
   fun testIgnoresNonResourceCalls() {
     myFixture.configureByText(
       "Test.kt",
