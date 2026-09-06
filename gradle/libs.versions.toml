@@ -1,5 +1,5 @@
 [versions]
-spotless = "8.2.1"
+spotless = "8.10.2"
 ktlint = "1.5.0"
 kotlin = "2.3.10"
 intellij-platform = "2.11.0"
